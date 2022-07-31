@@ -5,11 +5,12 @@ const sequelize = require('../db.sequelize');
 const { getBenefitPrice } = require('./priceFilter');
 const { dateToTimestamp } = require('./dateHandler');
 const { Scrapper } = require('./scrapper');
-const { Query } = require('../models/query');
 const { User } = require('../models/user');
 const { Card } = require('../models/card');
-
-async function getByQueryString(query) {
+const { fetchRegexFromQuery, filterByRegex } = require('../handlers/regexHandler');
+const { getQueriesFromDb } = require('../controller/quieryController')
+ 
+async function scrapByQuery(query) {
     try {
         const scrapper = new Scrapper(query);
         let result = [];
@@ -44,32 +45,11 @@ async function processQueryToDb(query) {
     return isObserved;
 }
 
-async function getQueriesFromDb() {
-    const queries = await Query.findAll()
-   return queries;
-};
-
-async function updateQueryById(id, field, value) {
-    return await Query.update({ [field]: value }, { where: { id: id }});
-}
-
-async function deleteById(id) {
-    return await Query.destroy({ where: { id: id }});
-}
-
-async function getQueryById(id) {
-    return await Query.findByPk(id)
-}
-
-async function saveCardsToDb(cards) {
-    await Card.bulkCreate(cards, {ignoreDuplicates: true});
-}
-
 async function addCardsToDb() {
     const queries = await getQueriesFromDb();
     await queries.forEach(async (query) => {
         const { category,  searchQuery, regexForModel, id } = query;
-        const data = await getByQueryString({category: category, searchQuery: searchQuery, queryId: id});
+        const data = await scrapByQuery({category: category, searchQuery: searchQuery, queryId: id});
         const regex = fetchRegexFromQuery(query)
         let afterRegex = filterByRegex({ regex, data }, regexForModel)
         let maxPrice = query.maxPrice;
@@ -78,6 +58,10 @@ async function addCardsToDb() {
         await saveCardsToDb(dateConvereted);
         getLog({ data, regex, afterRegex, dateConvereted, query });
     })
+}
+
+async function saveCardsToDb(cards) {
+    await Card.bulkCreate(cards, {ignoreDuplicates: true});
 }
 
 function queryBuilder(query) {
@@ -93,26 +77,6 @@ function queryBuilder(query) {
      }
 }
 
-function filterByRegex({regex: {brand, model} ,data}, regexForModel) {
-    return regexForModel ? 
-    data.filter(el => brand.test(el.name) && model.test(el.name)) : 
-    data.filter(el => brand.test(el.name));
-
-}
-
-function fetchRegexFromQuery(query) {
-    try {
-        const brand = new RegExp(query.regex, 'i');
-        const model = new RegExp(query.regexModelTxt, 'i');
-        return { brand, model }
-    } catch (err) {
-        console.error(err);
-        const brand = new RegExp(query.regex, 'i');
-        const model = 'Bad regex expession -- ' + err;
-        return { brand, model }
-    }
-}
-
 function getLog({data, regex, afterRegex, dateConvereted, query}) {
     console.log(new Date(Date.now()));
     console.log(regex.brand, regex.model, query.searchQuery);
@@ -123,12 +87,7 @@ function getLog({data, regex, afterRegex, dateConvereted, query}) {
 }
 
 module.exports = {
-    getByQueryString,
+    scrapByQuery,
     processQueryToDb,
-    getQueriesFromDb,
-    updateQueryById,
-    deleteById,
     addCardsToDb,
-    getQueryById,
-    fetchRegexFromQuery
 }

@@ -2,7 +2,8 @@
 
 const { Markup, Scenes } = require('telegraf');
 const { options, startBtn } = require('../buttons/botContent');
-const { getQueriesFromDb, updateQueryById, deleteById, getQueryById, fetchRegexFromQuery } = require('../../handlers/queryHandler');
+const { getQueriesFromDb, updateQueryById, deleteById, getQueryById } = require('../../controller/quieryController');
+const { fetchRegexFromQuery } = require('../../handlers/regexHandler')
 
 function createInlineKeyboard(buttonName = [], cols = 1) {
     const btns = buttonName.map(btn => Markup.button.callback(btn, btn));
