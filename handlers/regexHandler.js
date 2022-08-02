@@ -1,8 +1,8 @@
 'use strict'
 
 function filterByRegex({regex: {brand, model} ,data}, regexForModel) {
-    return regexForModel ? 
-    data.filter(el => brand.test(el.name) && model.test(el.name)) : 
+    return regexForModel && model ? 
+    data.filter(el => brand.test(el.name) && model?.test(el.name)) : 
     data.filter(el => brand.test(el.name));
 
 }
@@ -15,7 +15,7 @@ function fetchRegexFromQuery(query) {
     } catch (err) {
         console.error(err);
         const brand = new RegExp(query.regex, 'i');
-        const model = 'Bad regex expession -- ' + err;
+        const model = false;
         return { brand, model }
     }
 }

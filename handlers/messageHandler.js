@@ -5,19 +5,19 @@ const  https  = require('https');
 const { Query } = require('../models/query');
 const { User } = require('../models/user');
 
-const postOptions = {
-    host: 'api.telegram.org',
-    path: `/bot${process.env.BOT_TOKEN}/`,
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    }
-}
-
 async function sendToBot() {
+
+    const postOptions = {
+        host: 'api.telegram.org',
+        path: `/bot${process.env.BOT_TOKEN}/`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    }
+
     const queries = await Query.findAll({include: {model: User}});
     queries.forEach(async (query) => {
-
         const cards = await query.getCards();
         const lastDate = cards.reduce((date, card) => card.time > date ? date = card.time : date, 0);
         
@@ -52,21 +52,16 @@ function sendMessage(chatId, data, postOptions, hasHeader) {
     const req = https.request(postOptions, res => {
         console.log('Status code is : ' + res.statusCode);
         
-        res.on('data', chunk => {
-            console.log('Data : ' + chunk);
-        });
-
-        res.on('end', () => {
-            console.log('Body : ' + JSON.stringify(body) + ' has been sent');
-        }).on('error', err => {
+        res
+        .on('error', err => {
             console.log('Have an error when send Message to client -- ' + err);
-        }).on('close', () => {
+        })
+        .on('close', () => {
             res.destroy();
         })
     });
     
-    req.write(JSON.stringify(body));
-    req.end();
+    req.end(JSON.stringify(body));
 }
 
 module.exports = sendToBot;

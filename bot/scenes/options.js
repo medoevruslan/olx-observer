@@ -2,7 +2,7 @@
 
 const { Markup, Scenes } = require('telegraf');
 const { options, startBtn } = require('../buttons/botContent');
-const { getQueriesFromDb, updateQueryById, deleteById, getQueryById } = require('../../controller/quieryController');
+const { getQueriesFromDb, updateQueryById, deleteById, getQueryById } = require('../../controller/queryController');
 const { fetchRegexFromQuery } = require('../../handlers/regexHandler')
 
 function createInlineKeyboard(buttonName = [], cols = 1) {

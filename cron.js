@@ -4,9 +4,8 @@ const CronJob = require('cron').CronJob;
 const { addCardsToDb } = require('./handlers/queryHandler');
 const sendToBot = require('./handlers/messageHandler');
 
-
 const jobCronSender = new CronJob(
-	'*/7 * * * *',
+	'*/5 * * * *',
 	async function() {
 		console.log('______________You will see this message every 7 minute (SENDING MESSAGES) ______________');
         await sendToBot();
@@ -17,7 +16,7 @@ const jobCronSender = new CronJob(
 );
 
 const jobCronCollector = new CronJob(
-	'*/4 * * * *',
+	'*/3 * * * *',
 	async function() {
 		console.log('_______________You will see this message every 4 minute (ADDING CARDS TO DATABASE)______________');
 		await addCardsToDb();

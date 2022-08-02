@@ -8,7 +8,7 @@ const { Scrapper } = require('./scrapper');
 const { User } = require('../models/user');
 const { Card } = require('../models/card');
 const { fetchRegexFromQuery, filterByRegex } = require('../handlers/regexHandler');
-const { getQueriesFromDb } = require('../controller/quieryController')
+const { getQueriesFromDb } = require('../controller/queryController')
  
 async function scrapByQuery(query) {
     try {
