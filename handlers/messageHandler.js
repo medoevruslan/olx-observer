@@ -50,17 +50,20 @@ function sendMessage(chatId, data, postOptions, hasHeader) {
     }
     
     const req = https.request(postOptions, res => {
-        console.log('Status code is : ' + res.statusCode);
-        
+        console.log('making a request to telegram server');
         res
+        .on('data', () => {
+            console.log('got a response from telegram server');
+        })
         .on('error', err => {
             console.log('Have an error when send Message to client -- ' + err);
         })
         .on('close', () => {
+            console.log('connection is closed, moving further');
             res.destroy();
         })
     });
-    
+
     req.end(JSON.stringify(body));
 }
 

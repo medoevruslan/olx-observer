@@ -8,7 +8,8 @@ const { Scrapper } = require('./scrapper');
 const { User } = require('../models/user');
 const { Card } = require('../models/card');
 const { fetchRegexFromQuery, filterByRegex } = require('../handlers/regexHandler');
-const { getQueriesFromDb } = require('../controller/queryController')
+const { getQueriesFromDb } = require('../controller/queryController');
+const QueryDto = require('../dtos/QueryDto');
  
 async function scrapByQuery(query) {
     try {
@@ -45,11 +46,16 @@ async function processQueryToDb(query) {
     return isObserved;
 }
 
-async function addCardsToDb() {
+async function getQueriesDto() {
     const queries = await getQueriesFromDb();
-    await queries.forEach(async (query) => {
-        const { category,  searchQuery, regexForModel, id } = query;
-        const data = await scrapByQuery({category: category, searchQuery: searchQuery, queryId: id});
+    return queries.map(query => new QueryDto(query));
+}
+
+async function addCardsToDb() {
+    const queries = await getQueriesDto();
+    queries.forEach(async (query) => {
+        const { category, searchQuery, regexForModel, queryId } = query;
+        const data = await scrapByQuery({category, searchQuery, queryId});
         const regex = fetchRegexFromQuery(query)
         let afterRegex = filterByRegex({ regex, data }, regexForModel)
         let maxPrice = query.maxPrice;
