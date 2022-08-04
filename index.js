@@ -1,9 +1,7 @@
 'use strict'
 
 const bot = require('./bot/queryBot');
-const { jobCronSender, jobCronCollector } = require('./cron');
+const { jobSendAddCards } = require('./cron');
 
-jobCronSender.start();
-jobCronCollector.start();
+jobSendAddCards();
 bot.launch();
-// jobCron.stop();

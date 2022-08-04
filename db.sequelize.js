@@ -8,7 +8,13 @@ const sequelize = new Sequelize(
         dialect: 'postgres',
         host: 'localhost',
         port: 5432,
-        ssl: true
+        pool: {
+            max: 10,
+            min: 5,
+            idle: 60*3*1000
+        },
+        ssl: true,
+        logging: false
     });
 
 module.exports = sequelize;

@@ -4,29 +4,18 @@ const CronJob = require('cron').CronJob;
 const { addCardsToDb } = require('./handlers/queryHandler');
 const sendToBot = require('./handlers/messageHandler');
 
-const jobCronSender = new CronJob(
-	'*/5 * * * *',
-	async function() {
-		console.log('______________You will see this message every 7 minute (SENDING MESSAGES) ______________');
-        await sendToBot();
-	},
-	null,
-	false,
-	'Europe/Kiev'
-);
-
-const jobCronCollector = new CronJob(
-	'*/3 * * * *',
-	async function() {
-		console.log('_______________You will see this message every 4 minute (ADDING CARDS TO DATABASE)______________');
-		await addCardsToDb();
-	},
-	null,
-	false,
-	'Europe/Kiev'
-);
+const jobSendAddCards = async () => {
+	console.log('_______________(ADDING CARDS TO DATABASE)______________');
+	await addCardsToDb();
+	setTimeout(async () => {
+		console.log('______________ (SENDING MESSAGES) ______________');
+		 await sendToBot();
+		 setTimeout(() => jobSendAddCards(), 60 * 3 * 1000)
+		}, 60 * 4 * 1000) 
+}
 
 module.exports = { 
 	jobCronSender, 
-	jobCronCollector 
+	jobCronCollector,
+	jobSendAddCards
 };
