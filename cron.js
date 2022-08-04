@@ -1,6 +1,5 @@
 'use strict'
 
-const CronJob = require('cron').CronJob;
 const { addCardsToDb } = require('./handlers/queryHandler');
 const sendToBot = require('./handlers/messageHandler');
 
@@ -15,7 +14,5 @@ const jobSendAddCards = async () => {
 }
 
 module.exports = { 
-	jobCronSender, 
-	jobCronCollector,
 	jobSendAddCards
 };
