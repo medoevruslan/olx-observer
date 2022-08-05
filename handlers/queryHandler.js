@@ -51,20 +51,19 @@ async function addCardsToDb() {
     const queries = await getQueriesDto();
     const browser = await initBrowser();
     // const data = await getScrappedData(queries)
-    queries.forEach((query) => {
-        console.log(data[1]);
+    queries.forEach(async (query) => {
+        // console.log(data[1]);
         // const { category, searchQuery, regexForModel, id } = query;
         // const query = queries.filter(query => query.id === data.queryId)[0];
+        const { maxPrice, regexForModel } = query;
+        const data = await browser.scrap(query)
         const regex = fetchRegexFromQuery(query)
         let afterRegex = filterByRegex({ regex, data }, regexForModel)
-        const data = await addQueriesToScrap({category, searchQuery, queryId});
-        // 
-        // 
-        // let maxPrice = query.maxPrice;
-        // const benefitPrices = getBenefitPrice(afterRegex, maxPrice);
-        // const dateConvereted = dateToTimestamp(benefitPrices);
+        // const data = await addQueriesToScrap({category, searchQuery, queryId});
+        const benefitPrices = getBenefitPrice(afterRegex, maxPrice);
+        const dateConvereted = dateToTimestamp(benefitPrices);
         // await saveCardsToDb(dateConvereted);
-        // getLog({ data, regex, afterRegex, dateConvereted, query });
+        getLog({ data, regex, afterRegex, dateConvereted, query });
     })
 }
 

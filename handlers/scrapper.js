@@ -4,8 +4,6 @@ const puppeteer = require('puppeteer');
 
 class Scrapper {
 
-    cardsArray = [];
-
     // constructor({rootUrl = 'https://www.olx.ua/', category = '', searchQuery = '', queryId}) {
     //     this._URL = new URL(rootUrl);
     //     this._URL_CATEGORY = new URL(category + searchQuery, this._URL);
@@ -21,12 +19,15 @@ class Scrapper {
         this.browser = await puppeteer.launch({ headless: true, timeout: 0 })
     }
 
+    async closeBrowser() {
+        await this.browser.close();
+    }
+
     // addTasks(list) {
     //     this.tasks = list;
     // }
 
     async scrap(task) {
-
         try {
                 const pageUrl = new URL(task.category + task.searchQuery, this._URL);
                 pageUrl.searchParams.set('currency', 'UAH');
@@ -34,6 +35,7 @@ class Scrapper {
                 await page.goto(pageUrl.href, { waitUntil: 'load' });
 
                 let firstPage = true;
+                const cardsArray = []
 
                 while (true) {
                     const forward = await page.$('.pagination-list a[data-testid=pagination-forward]');
@@ -51,7 +53,7 @@ class Scrapper {
                             });
                     }, task.id);
 
-                    this.cardsArray.push(cards);
+                    cardsArray.push(cards);
 
                     if (forward) {
                         await Promise.all([
@@ -64,13 +66,11 @@ class Scrapper {
                 }
 
                 await page.close();
+                return cardsArray;
         } catch (err) {
             console.log('BROWSER ERROR :::::: ' + err);
-            this.browser.close();
+            await this.browser.close();
         }
-        await this.browser.close();
-
-        return this.cardsArray;
     }
 }
 
