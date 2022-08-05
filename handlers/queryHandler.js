@@ -50,8 +50,9 @@ async function getQueriesDto() {
 }
 
 async function addCardsToDb() {
+    const startTime = performance.now();
     const queries = await getQueriesDto();
-    queries.forEach(async (query) => {
+    for await (let query of queries) {
         const { category, searchQuery, regexForModel, queryId, maxPrice } = query;
         const data = await scrapByQuery({ category, searchQuery, queryId });
         const regex = fetchRegexFromQuery(query)
@@ -60,7 +61,8 @@ async function addCardsToDb() {
         const dateConvereted = dateToTimestamp(benefitPrices);
         await saveCardsToDb(dateConvereted);
         getLog({ data, regex, afterRegex, dateConvereted, query });
-    })
+    }
+    console.log(`time of scrapping (browser version) is ${performance.now() - startTime} milliseconds`);
 }
 
 async function saveCardsToDb(cards) {
