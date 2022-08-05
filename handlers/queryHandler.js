@@ -11,17 +11,13 @@ const { fetchRegexFromQuery, filterByRegex } = require('../handlers/regexHandler
 const { getQueriesFromDb } = require('../controller/queryController');
 const QueryDto = require('../dtos/QueryDto');
  
-async function scrapByQuery(query) {
-    try {
-        const scrapper = new Scrapper(query);
+async function getScrappedData(task) {
+        // const browser = await initBrowser();
+        // browser.addTasks(queries);
         let result = [];
-        result = await scrapper.scrap();
+        result = await browser.scrap(task);
         const flatted = result.flat();
         return flatted;
-    } catch(err) {
-        console.error('SCRAPPING ERROR ---- ' + err);
-        return [];
-    }
 }
 
 async function processQueryToDb(query) {
@@ -53,17 +49,29 @@ async function getQueriesDto() {
 
 async function addCardsToDb() {
     const queries = await getQueriesDto();
-    queries.forEach(async (query) => {
-        const { category, searchQuery, regexForModel, queryId } = query;
-        const data = await scrapByQuery({category, searchQuery, queryId});
+    const browser = await initBrowser();
+    // const data = await getScrappedData(queries)
+    queries.forEach((query) => {
+        console.log(data[1]);
+        // const { category, searchQuery, regexForModel, id } = query;
+        // const query = queries.filter(query => query.id === data.queryId)[0];
         const regex = fetchRegexFromQuery(query)
         let afterRegex = filterByRegex({ regex, data }, regexForModel)
-        let maxPrice = query.maxPrice;
-        const benefitPrices = getBenefitPrice(afterRegex, maxPrice);
-        const dateConvereted = dateToTimestamp(benefitPrices);
-        await saveCardsToDb(dateConvereted);
-        getLog({ data, regex, afterRegex, dateConvereted, query });
+        const data = await addQueriesToScrap({category, searchQuery, queryId});
+        // 
+        // 
+        // let maxPrice = query.maxPrice;
+        // const benefitPrices = getBenefitPrice(afterRegex, maxPrice);
+        // const dateConvereted = dateToTimestamp(benefitPrices);
+        // await saveCardsToDb(dateConvereted);
+        // getLog({ data, regex, afterRegex, dateConvereted, query });
     })
+}
+
+async function initBrowser() {
+    const scrapper = new Scrapper();
+    await scrapper.initBrowser()
+    return scrapper;
 }
 
 async function saveCardsToDb(cards) {
@@ -93,7 +101,5 @@ function getLog({data, regex, afterRegex, dateConvereted, query}) {
 }
 
 module.exports = {
-    scrapByQuery,
-    processQueryToDb,
     addCardsToDb,
 }

@@ -1,7 +1,7 @@
 'use strict'
 
 module.exports = class QueryDto {
-    queryId;
+    id;
     category;
     searchQuery;
     regexForModel;
@@ -10,7 +10,7 @@ module.exports = class QueryDto {
     maxPrice;
 
     constructor(model) {
-        this.queryId = model.id;
+        this.id = model.id;
         this.regex = model.regex;
         this.category = model.category;
         this.maxPrice = model.maxPrice;
