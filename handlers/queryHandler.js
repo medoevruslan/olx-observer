@@ -53,9 +53,6 @@ async function addCardsToDb() {
         getLog({ data, regex, afterRegex, dateConvereted, query });
     }
     await browser.closeBrowser();
-    // queries.forEach(async (query) => {
-    
-    // });
 }
 
 async function initBrowser() {
@@ -92,4 +89,5 @@ function getLog({data, regex, afterRegex, dateConvereted, query}) {
 
 module.exports = {
     addCardsToDb,
+    processQueryToDb,
 }
