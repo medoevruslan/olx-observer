@@ -4,12 +4,12 @@ require('dotenv').config();
 const sequelize = require('../db.sequelize');
 const { getBenefitPrice } = require('./priceFilter');
 const { dateToTimestamp } = require('./dateHandler');
-const { Scrapper } = require('./scrapper');
 const { User } = require('../models/user');
 const { Card } = require('../models/card');
 const { fetchRegexFromQuery, filterByRegex } = require('../handlers/regexHandler');
 const { getQueriesFromDb } = require('../controller/queryController');
 const QueryDto = require('../dtos/QueryDto');
+const { Cluster } = require('puppeteer-cluster')
  
 async function processQueryToDb(query) {
     let isObserved = false;
@@ -40,28 +40,70 @@ async function getQueriesDto() {
 
 async function addCardsToDb() {
     const queries = await getQueriesDto();
-    const browser = await initBrowser();
-    const startTime = performance.now();
-    for await (let query of queries) {
-        const { maxPrice, regexForModel } = query;
-        const scrapped = await browser.scrap(query);
-        const data = scrapped.flat();
-        const regex = fetchRegexFromQuery(query);
-        let afterRegex = filterByRegex({ regex, data }, regexForModel);
-        const benefitPrices = getBenefitPrice(afterRegex, maxPrice);
-        const dateConvereted = dateToTimestamp(benefitPrices);
-        await saveCardsToDb(dateConvereted)
-        getLog({ data, regex, afterRegex, dateConvereted, query });
-    }
-    const endTime = performance.now();
-    console.log(`scrapping (tab version) time is : ${endTime - startTime} milliseconds` );
-    await browser.closeBrowser();
-}
+    const baseUrl = new URL('https://www.olx.ua/');
 
-async function initBrowser() {
-    const scrapper = new Scrapper();
-    await scrapper.initBrowser()
-    return scrapper;
+    const cluster = await Cluster.launch({
+        concurrency: Cluster.CONCURRENCY_CONTEXT,
+        maxConcurrency: 5,
+    })
+
+    await cluster.task( async({ page, data: query }) => {
+        const pageUrl = new URL(query.category + query.searchQuery, baseUrl);
+        pageUrl.searchParams.set('currency', 'UAH');
+        await page.goto(pageUrl.href);
+
+        let firstPage = true;
+        const cardsArray = []
+
+        try {
+            while (true) {
+                const forward = await page.$('.pagination-list a[data-testid=pagination-forward]');
+                if (!forward && !firstPage) break;
+                const cards = await page.evaluate((queryId) => {
+                    return [...document.querySelectorAll('div[data-cy=l-card]')]
+                        .map(el => {
+                            return {
+                                name: el.querySelector('h6').textContent,
+                                price: el.querySelector('h6').nextElementSibling.textContent,
+                                link: 'olx.ua' + el.querySelector('a').getAttribute('href'),
+                                time: el.querySelector('p[data-testid=location-date]').textContent.split(' - ')[1],
+                                queryId
+                            }
+                        });
+                }, query.id);
+    
+                cardsArray.push(cards);
+    
+                if (forward) {
+                    await Promise.all([
+                        await page.click('.pagination-list a[data-testid=pagination-forward]'),
+                        await page.waitForSelector('.pagination-list', { timeout: 0 }),
+                    ])
+                }
+    
+                if (firstPage) firstPage = false;
+            }
+
+            const { maxPrice, regexForModel } = query;
+            const data = cardsArray.flat();
+            const regex = fetchRegexFromQuery(query);
+            let afterRegex = filterByRegex({ regex, data }, regexForModel);
+            const benefitPrices = getBenefitPrice(afterRegex, maxPrice);
+            const dateConvereted = dateToTimestamp(benefitPrices);
+            await saveCardsToDb(dateConvereted)
+            getLog({ data, regex, afterRegex, dateConvereted, query });
+
+        } catch (err) {
+            console.log(err);
+        }
+    })
+
+    queries.forEach(async query => {
+        cluster.queue(query);
+    })
+
+    await cluster.idle();
+    await cluster.close();
 }
 
 async function saveCardsToDb(cards) {
