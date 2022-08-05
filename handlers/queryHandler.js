@@ -41,6 +41,7 @@ async function getQueriesDto() {
 async function addCardsToDb() {
     const queries = await getQueriesDto();
     const browser = await initBrowser();
+    const startTime = performance.now();
     for await (let query of queries) {
         const { maxPrice, regexForModel } = query;
         const scrapped = await browser.scrap(query);
@@ -52,6 +53,8 @@ async function addCardsToDb() {
         await saveCardsToDb(dateConvereted)
         getLog({ data, regex, afterRegex, dateConvereted, query });
     }
+    const endTime = performance.now();
+    console.log(`scrapping (tab version) time is : ${endTime - startTime} milliseconds` );
     await browser.closeBrowser();
 }
 

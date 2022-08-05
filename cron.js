@@ -5,9 +5,7 @@ const sendToBot = require('./handlers/messageHandler');
 
 const jobSendAddCards = async () => {
 	console.log('_______________(ADDING CARDS TO DATABASE)______________');
-	console.log( 'before adding cards method : ' ,process.memoryUsage());
 	await addCardsToDb();
-	console.log('after : ' ,process.memoryUsage());
 	setTimeout(async () => {
 		console.log('______________ (SENDING MESSAGES) ______________');
 		 await sendToBot();
