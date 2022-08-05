@@ -11,15 +11,6 @@ const { fetchRegexFromQuery, filterByRegex } = require('../handlers/regexHandler
 const { getQueriesFromDb } = require('../controller/queryController');
 const QueryDto = require('../dtos/QueryDto');
  
-async function getScrappedData(task) {
-        // const browser = await initBrowser();
-        // browser.addTasks(queries);
-        let result = [];
-        result = await browser.scrap(task);
-        const flatted = result.flat();
-        return flatted;
-}
-
 async function processQueryToDb(query) {
     let isObserved = false;
     let user = await User.findOne({ where : { chatId: query.chatId } });
@@ -50,21 +41,21 @@ async function getQueriesDto() {
 async function addCardsToDb() {
     const queries = await getQueriesDto();
     const browser = await initBrowser();
-    // const data = await getScrappedData(queries)
-    queries.forEach(async (query) => {
-        // console.log(data[1]);
-        // const { category, searchQuery, regexForModel, id } = query;
-        // const query = queries.filter(query => query.id === data.queryId)[0];
+    for await (let query of queries) {
         const { maxPrice, regexForModel } = query;
-        const data = await browser.scrap(query)
-        const regex = fetchRegexFromQuery(query)
-        let afterRegex = filterByRegex({ regex, data }, regexForModel)
-        // const data = await addQueriesToScrap({category, searchQuery, queryId});
+        const scrapped = await browser.scrap(query);
+        const data = scrapped.flat();
+        const regex = fetchRegexFromQuery(query);
+        let afterRegex = filterByRegex({ regex, data }, regexForModel);
         const benefitPrices = getBenefitPrice(afterRegex, maxPrice);
         const dateConvereted = dateToTimestamp(benefitPrices);
-        // await saveCardsToDb(dateConvereted);
+        await saveCardsToDb(dateConvereted)
         getLog({ data, regex, afterRegex, dateConvereted, query });
-    })
+    }
+    await browser.closeBrowser();
+    // queries.forEach(async (query) => {
+    
+    // });
 }
 
 async function initBrowser() {

@@ -4,13 +4,6 @@ const puppeteer = require('puppeteer');
 
 class Scrapper {
 
-    // constructor({rootUrl = 'https://www.olx.ua/', category = '', searchQuery = '', queryId}) {
-    //     this._URL = new URL(rootUrl);
-    //     this._URL_CATEGORY = new URL(category + searchQuery, this._URL);
-    //     this._URL_CATEGORY.searchParams.set('currency', 'UAH');
-    //     this._queryId = queryId;
-    // }
-
     constructor(rootUrl = 'https://www.olx.ua/') {
         this._URL = new URL(rootUrl);
     }
@@ -22,10 +15,6 @@ class Scrapper {
     async closeBrowser() {
         await this.browser.close();
     }
-
-    // addTasks(list) {
-    //     this.tasks = list;
-    // }
 
     async scrap(task) {
         try {
