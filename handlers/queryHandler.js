@@ -54,14 +54,13 @@ async function getQueriesDto() {
 async function addCardsToDb() {
     const queries = await getQueriesDto();
     queries.forEach(async (query) => {
-        const { category, searchQuery, regexForModel, queryId } = query;
+        const { category, searchQuery, regexForModel, queryId, maxPrice } = query;
         const data = await scrapByQuery({category, searchQuery, queryId});
         const regex = fetchRegexFromQuery(query)
         let afterRegex = filterByRegex({ regex, data }, regexForModel)
-        let maxPrice = query.maxPrice;
         const benefitPrices = getBenefitPrice(afterRegex, maxPrice);
         const dateConvereted = dateToTimestamp(benefitPrices);
-        await saveCardsToDb(dateConvereted);
+        // await saveCardsToDb(dateConvereted);
         getLog({ data, regex, afterRegex, dateConvereted, query });
     })
 }
