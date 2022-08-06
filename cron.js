@@ -4,13 +4,15 @@ const { addCardsToDb } = require('./handlers/queryHandler');
 const sendToBot = require('./handlers/messageHandler');
 
 const jobSendAddCards = async () => {
+	console.log(new Date(Date.now()));
 	console.log('_______________(ADDING CARDS TO DATABASE)______________');
 	await addCardsToDb();
 	setTimeout(async () => {
+		console.log(new Date(Date.now()));
 		console.log('______________ (SENDING MESSAGES) ______________');
 		 await sendToBot();
-		 setTimeout(() => jobSendAddCards(), 60 * 3 * 1000)
-		}, 60 * 2 * 1000) 
+		 setTimeout(() => jobSendAddCards(), 60 * 2 * 1000)
+		}, 60 * 3 * 1000) 
 }
 
 module.exports = { 

@@ -76,8 +76,8 @@ async function addCardsToDb() {
     
                 if (forward) {
                     await Promise.all([
-                        await page.click('.pagination-list a[data-testid=pagination-forward]'),
-                        await page.waitForSelector('.pagination-list', { timeout: 0 }),
+                        page.click('.pagination-list a[data-testid=pagination-forward]'),
+                        page.waitForSelector('.pagination-list', { timeout: 0 }),
                     ])
                 }
     
