@@ -3,6 +3,7 @@
 const { addCardsToDb } = require('./handlers/queryHandler');
 const sendToBot = require('./handlers/messageHandler');
 
+
 const jobSendAddCards = async () => {
 	console.log('_______________(ADDING CARDS TO DATABASE)______________');
 	await addCardsToDb();
@@ -13,6 +14,5 @@ const jobSendAddCards = async () => {
 		}, 60 * 4 * 1000) 
 }
 
-module.exports = { 
-	jobSendAddCards
+module.exports = {
 };

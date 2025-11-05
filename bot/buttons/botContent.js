@@ -1,10 +1,10 @@
 'use strict'
 
 const categories = {
-    'Фото': 'd/elektronika/foto-video/tsifrovye-fotoapparaty/',
-    'Ноутбуки': 'd/elektronika/noutbuki-i-aksesuary/noutbuki/',
-    'Объективы': 'd/elektronika/foto-video/obektivy/',
-    'Планшеты': 'd/elektronika/planshety-el-knigi-i-aksessuary/planshetnye-kompyutery/'
+    'Фото': '/elektronika/foto-video/tsifrovye-fotoapparaty/',
+    'Ноутбуки': '/elektronika/noutbuki-i-aksesuary/noutbuki/',
+    'Объективы': '/elektronika/foto-video/obektivy/',
+    'Планшеты': '/elektronika/planshety-el-knigi-i-aksessuary/planshetnye-kompyutery/'
 }
 
 const fotoBrands = {

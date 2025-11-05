@@ -1,0 +1,20 @@
+version: "1"
+
+volumes:
+  olx_bot_postgres_data: {}
+
+services:
+  optionscout:
+    image: postgres:15.2
+    container_name: olx_bot_postgres
+    volumes:
+      - olx_bot_postgres_data:/var/lib/postgresql/data:Z
+
+    # make sure these values match the ones in your .env.local and/or .env file
+    # e.g. OLX_BOT=postgresql://me:secure_pwd@127.0.0.1:5432/olx_bot
+    environment:
+      - POSTGRES_DB=olx_bot
+      - POSTGRES_USER=me
+      - POSTGRES_PASSWORD=secure_pwd
+    ports:
+      - "5433:5432"

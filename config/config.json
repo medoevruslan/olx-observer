@@ -1,0 +1,10 @@
+{
+  "development": {
+    "username": "me",
+    "password": "secure_pwd",
+    "database": "olx_bot",
+    "host": "localhost",
+    "dialect": "postgres",
+    "port": "5433"
+  }
+}

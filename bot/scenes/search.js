@@ -9,6 +9,7 @@ function createInlineKeyboard(buttonName = [], cols = 1) {
     const btns = buttonName.map(btn => Markup.button.callback(btn, btn));
     return Markup.inlineKeyboard(btns, { columns: cols });
 }
+
 const categoryBtn = createInlineKeyboard(Object.keys(categories), 2);
 const fotoBrandBtn = createInlineKeyboard(Object.keys(fotoBrands), 3);
 const laptopBrandBtn = createInlineKeyboard(Object.keys(laptopBrands), 3);
