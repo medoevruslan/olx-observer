@@ -4,8 +4,8 @@ volumes:
   olx_bot_postgres_data: {}
 
 services:
-  optionscout:
-    image: postgres:15.2
+  olxbot:
+    image: postgres:17.1
     container_name: olx_bot_postgres
     volumes:
       - olx_bot_postgres_data:/var/lib/postgresql/data:Z
