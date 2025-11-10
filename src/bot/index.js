@@ -1,11 +1,9 @@
 "use strict";
 
-require("dotenv").config();
-
 const { Telegraf, Markup, session, Scenes } = require("telegraf");
 const searchWizard = require("./scenes/search");
 const optionsWizard = require("./scenes/options");
-const sequelize = require("../db.sequelize");
+const sequelize = require("../../db.sequelize");
 const { startBtn } = require("./buttons/botContent");
 
 const bot = new Telegraf(process.env.BOT_TOKEN);

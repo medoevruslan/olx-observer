@@ -2,8 +2,8 @@
 
 require("dotenv").config();
 
-const { launchScrap } = require("./handlers/queryHandler");
-const { Scrapper } = require("./handlers/scrapper");
+const { launch } = require("./src/handlers/queryHandler");
+const { Walker } = require("./src/core/Walker");
 
-const scrapper = new Scrapper();
-launchScrap(scrapper);
+const walker = new Walker();
+launch(walker);
