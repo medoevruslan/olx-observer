@@ -1,13 +1,17 @@
-"use strict";
+import type { CardsResult } from "./types.ts";
 
-const { Cluster } = require("puppeteer-cluster");
+import { Cluster } from "puppeteer-cluster";
 
-class Walker {
+export class Walker {
+  private _URL: URL;
+  private _URL_CATEGORY: URL | null = null;
+  private _queryId: number = -1;
+
   constructor(rootUrl = "https://www.olx.ua/") {
     this._URL = new URL(rootUrl);
   }
 
-  initQuery(category = "", searchQuery = "", queryId) {
+  initQuery(category = "", searchQuery = "", queryId: number) {
     this._URL_CATEGORY = new URL(category + searchQuery, this._URL);
     this._URL_CATEGORY.searchParams.set("currency", "UAH");
     this._queryId = queryId;
@@ -18,7 +22,7 @@ class Walker {
       throw new Error("Walker is not initialized");
     }
     console.log("\x1b[31m%s\x1b[0m", "START WALKING ---- ");
-    let cardsArray = [];
+    let cardsArray: CardsResult[][] = [];
     const cluster = await Cluster.launch({
       concurrency: Cluster.CONCURRENCY_PAGE,
       maxConcurrency: 10, // Adjust the number of concurrent instances as needed
@@ -30,7 +34,7 @@ class Walker {
     });
 
     await cluster.task(async ({ page, data: queryId }) => {
-      await page.goto(this._URL_CATEGORY.href, { waitUntil: "load" });
+      await page.goto(this._URL_CATEGORY?.href, { waitUntil: "load" });
 
       let firstPage = true;
 
@@ -40,7 +44,7 @@ class Walker {
         );
         if (!forward && !firstPage) break;
 
-        const cards = await page.evaluate((queryId) => {
+        const cards = await page.evaluate((queryId: number) => {
           return [...document.querySelectorAll("div[data-cy=l-card]")].map(
             (el) => {
               return {
@@ -48,10 +52,10 @@ class Walker {
                 price:
                   el.querySelector("p[data-testid=ad-price]")?.textContent ??
                   "wrongSelector",
-                link: "olx.ua" + el.querySelector("a").getAttribute("href"),
+                link: "olx.ua" + el.querySelector("a")?.getAttribute("href"),
                 time: el
                   .querySelector("p[data-testid=location-date]")
-                  .textContent.split(" - ")[1],
+                  ?.textContent.split(" - ")[1],
                 queryId: queryId,
               };
             }
@@ -80,5 +84,3 @@ class Walker {
     return cardsArray;
   }
 }
-
-module.exports = { Walker };

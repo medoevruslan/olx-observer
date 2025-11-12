@@ -1,10 +1,10 @@
-"use strict";
+("use strict");
 
-const { DataTypes } = require("sequelize");
-const sequelize = require("../../db.sequelize");
-const { Card } = require("./card");
+import { DataTypes } from "sequelize";
+import { sequelize } from "../db/db.sequelize.ts";
+import { Card } from "./Card.ts";
 
-const Query = sequelize.define(
+export const Query = sequelize.define(
   "query",
   {
     id: {
@@ -49,4 +49,13 @@ const Query = sequelize.define(
 Query.hasMany(Card);
 Card.belongsTo(Query, { onDelete: "CASCADE" });
 
-module.exports = { Query };
+export type QueryModel = {
+  id: number;
+  category: string;
+  searchQuery: string;
+  regex: string;
+  maxPrice: number;
+  lastDateCard: Date | number; // Sequelize DATE with defaultValue 0
+  regexForModel?: boolean; // optional
+  regexModelTxt?: string | null; // optional + nullable
+};

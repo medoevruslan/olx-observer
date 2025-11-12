@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../../db.sequelize");
-const { Query } = require("./query");
+import { DataTypes } from "sequelize";
+import { sequelize } from "../db/db.sequelize.ts";
+import { Query } from "./Query.ts";
 
-const User = sequelize.define(
+export const User = sequelize.define(
   "client",
   {
     id: {
@@ -29,4 +29,8 @@ const User = sequelize.define(
 User.hasMany(Query);
 Query.belongsTo(User, { onDelete: "CASCADE" });
 
-module.exports = { User };
+export type UserModel = {
+  id: number;
+  chatId: string;
+  userName: string;
+};

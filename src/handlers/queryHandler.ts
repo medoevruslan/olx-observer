@@ -1,42 +1,61 @@
-"use strict";
+import "dotenv/config";
+import { sequelize } from "../db/db.sequelize.ts";
+import { getBenefitPrice } from "./priceFilter.ts";
+import { dateToTimestamp } from "./dateHandler.ts";
+import { Scrapper } from "./scrapper.ts";
+import { User } from "../models/User.ts";
+import { Card } from "../models/Card.ts";
+import { createRegex, filterByRegex } from "./regexHandler.ts";
+import { getQueriesFromDb } from "../controller/queryController.ts";
+import { QueryDto } from "../dtos/QueryDto.ts";
+import type { Walker } from "../core/Walker.js";
 
-require("dotenv").config();
-const sequelize = require("../../db.sequelize");
-const { getBenefitPrice } = require("./priceFilter");
-const { dateToTimestamp } = require("./dateHandler");
-const { Scrapper } = require("./scrapper");
-const { User } = require("../models/user");
-const { Card } = require("../models/card");
-const { fetchRegexFromQuery, filterByRegex } = require("./regexHandler");
-const { getQueriesFromDb } = require("../controller/queryController");
-const QueryDto = require("../dtos/QueryDto");
-
-async function scrapByQuery(query) {
-  const scrapper = new Scrapper(query);
+export async function scrapByQuery({
+  category,
+  searchQuery,
+  queryId,
+}: {
+  category: string;
+  searchQuery: string;
+  queryId: number;
+}) {
+  const scrapper = new Scrapper({ category, searchQuery, queryId });
   let result = [];
   result = await scrapper.scrap();
   const flatted = result.flat();
   return flatted;
 }
 
-async function launch(walker) {
+export async function launch(walker: Walker) {
+  const cardsData = await getCardsData(walker);
+  if (!cardsData.length) {
+    process.exit(1);
+  }
+
+  const regex = createRegex(query);
+  const afterRegex = filterByRegex({ regex, data }, regexForModel);
+  const benefitPrices = getBenefitPrice(afterRegex, maxPrice);
+  const dateConvereted = dateToTimestamp(benefitPrices);
+}
+
+async function getCardsData(walker: Walker) {
   const queries = await getQueriesDto();
   if (!queries.length) {
     console.log("Query list is Empty");
-    process.exit(1);
+    return [];
   }
   const work = queries.map(async (query) => {
-    const { category, searchQuery, regexForModel, queryId, maxPrice } = query;
+    const { category, searchQuery, queryId } = query;
     walker.initQuery(category, searchQuery, queryId);
     const data = await walker.execute();
-    return data;
+    return { data: data.flat(), query };
   });
 
-  await Promise.all(work);
-  process.exit(1);
+  const result = await Promise.all(work);
+  return result;
 }
 
-async function processQueryToDb(query) {
+export async function processQueryToDb(query: any) {
   let isObserved = false;
   let user = await User.findOne({ where: { chatId: query.chatId } });
   const assignedQuery = queryBuilder(query);
@@ -65,19 +84,19 @@ async function processQueryToDb(query) {
   return isObserved;
 }
 
-async function getQueriesDto() {
+async function getQueriesDto(): Promise<QueryDto[]> {
   const queries = await getQueriesFromDb();
   return queries.map((query) => new QueryDto(query));
 }
 
-async function addCardsToDb() {
+export async function addCardsToDb() {
   const startTime = performance.now();
   const queries = await getQueriesDto();
   for await (let query of queries) {
     const { category, searchQuery, regexForModel, queryId, maxPrice } = query;
     const data = await scrapByQuery({ category, searchQuery, queryId });
-    const regex = fetchRegexFromQuery(query);
-    let afterRegex = filterByRegex({ regex, data }, regexForModel);
+    const regex = createRegex(query);
+    const afterRegex = filterByRegex({ regex, data }, regexForModel);
     const benefitPrices = getBenefitPrice(afterRegex, maxPrice);
     const dateConvereted = dateToTimestamp(benefitPrices);
     await saveCardsToDb(dateConvereted);
@@ -123,10 +142,3 @@ function getLog({ data, regex, afterRegex, dateConvereted, query }) {
   console.log(`after limit price - ${dateConvereted.length}`);
   console.log(dateConvereted);
 }
-
-module.exports = {
-  scrapByQuery,
-  processQueryToDb,
-  addCardsToDb,
-  launch,
-};

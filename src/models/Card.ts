@@ -1,9 +1,7 @@
-"use strict";
+import { DataTypes } from "sequelize";
+import { sequelize } from "../db/db.sequelize.ts";
 
-const { DataTypes } = require("sequelize");
-const sequelize = require("../../db.sequelize");
-
-const Card = sequelize.define("card", {
+export const Card = sequelize.define("card", {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -27,4 +25,9 @@ const Card = sequelize.define("card", {
   },
 });
 
-module.exports = { Card };
+export type CardModel = {
+  id: number;
+  name: string;
+  link: string;
+  time: Date;
+};

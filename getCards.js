@@ -1,9 +1,7 @@
-"use strict";
+import "dotenv/config";
 
-require("dotenv").config();
-
-const { launch } = require("./src/handlers/queryHandler");
-const { Walker } = require("./src/core/Walker");
+import { launch } from "./src/handlers/queryHandler.ts";
+import { Walker } from "./src/core/Walker.ts";
 
 const walker = new Walker();
 launch(walker);

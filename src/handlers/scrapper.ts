@@ -1,8 +1,6 @@
-"use strict";
+import { Cluster } from "puppeteer-cluster";
 
-const { Cluster } = require("puppeteer-cluster");
-
-class Scrapper {
+export class Scrapper {
   constructor({
     rootUrl = "https://www.olx.ua/",
     category = "",
@@ -79,5 +77,3 @@ class Scrapper {
     return cardsArray;
   }
 }
-
-module.exports = { Scrapper };
