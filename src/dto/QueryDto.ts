@@ -1,5 +1,3 @@
-"use strict";
-
 import type { QueryModel } from "../models/Query.ts";
 
 export class QueryDto {

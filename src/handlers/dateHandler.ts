@@ -1,29 +1,29 @@
 import moment from "moment";
 
-export function dateToTimestamp(cards) {
-  return cards.map((card) => {
-    card.time = dateParser(card.time);
-    return card;
-  });
-}
+export function dateParser(date: string | undefined): number {
+  if (!date) return Date.now();
 
-function dateParser(date) {
-  let result;
+  // Handle "Сегодня" or "Вчера"
   if (date.startsWith("Сегодня") || date.startsWith("Вчера")) {
-    const [day, time] = date.split(" в ");
+    const [day, time = "00:00"] = date.split(" в ");
+    const [hours = 0, minutes = 0] = time.split(":").map(Number);
 
-    switch (day) {
-      case "Сегодня":
-        result = new Date().setHours(time.split(":")[0], time.split(":")[1]);
-        break;
-      case "Вчера":
-        const tempDate = new Date();
-        const yesterday = tempDate.setDate(yesterday.getDate() - 1);
-        result = yesterday.setHours(time.split(":")[0], time.split(":")[1]);
-        break;
+    const now = new Date();
+
+    if (day === "Сегодня") {
+      now.setHours(hours, minutes, 0, 0);
+      return now.getTime();
     }
-  } else {
-    result = moment.utc(date, "LL", "ru").toDate().getTime();
+
+    if (day === "Вчера") {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(hours, minutes, 0, 0);
+      return yesterday.getTime();
+    }
   }
-  return result;
+
+  // Parse formatted dates like "10 ноября 2025"
+  const parsed = moment(date, "LL", "ru", true).toDate();
+  return parsed.getTime() || Date.now();
 }

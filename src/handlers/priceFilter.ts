@@ -1,15 +1,16 @@
-export function sortPrice(data, ascending = true) {
-  const sorted = data
-    .map((el) => {
-      el.price = parseInt(el.price.replace(" ", ""));
-      return el;
-    })
-    .sort((a, b) => (ascending ? a.price - b.price : b.price - a.price));
+import { CardViewDto } from "../dto/CardViewDto.ts";
+
+function sortPrice(data: CardViewDto[], ascending = true) {
+  const sorted = data.toSorted((a, b) => {
+    return ascending ? a.price - b.price : a.price - b.price;
+  });
   return sorted;
 }
 
-export function getBenefitPrice(data, maxPrice) {
-  return sortPrice(data).filter(
+export function filterByPrice(cards: CardViewDto[], maxPrice: number) {
+  const sorted = sortPrice(cards);
+
+  return sorted.filter(
     (el) => maxPrice >= el.price && el.price >= maxPrice - maxPrice * 0.7
   );
 }
