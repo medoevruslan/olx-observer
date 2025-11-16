@@ -1,9 +1,9 @@
-import { DataTypes } from "sequelize";
+import { DataTypes, Model } from "sequelize";
 import { sequelize } from "../db/db.sequelize.ts";
 import { Query } from "./Query.ts";
 
-export const User = sequelize.define(
-  "client",
+export const User = sequelize.define<UserModel>(
+  "user",
   {
     id: {
       type: DataTypes.INTEGER,
@@ -29,8 +29,8 @@ export const User = sequelize.define(
 User.hasMany(Query);
 Query.belongsTo(User, { onDelete: "CASCADE" });
 
-export type UserModel = {
+export interface UserModel extends Model {
   id: number;
   chatId: string;
   userName: string;
-};
+}

@@ -1,8 +1,10 @@
-import { DataTypes, HasManyGetAssociationsMixin, Model } from "sequelize";
+import { DataTypes, Model } from "sequelize";
+import type { HasManyGetAssociationsMixin } from "sequelize";
 import { sequelize } from "../db/db.sequelize.ts";
 
 import { Card } from "./Card.ts";
 import type { CardModel } from "./Card.ts";
+import type { UserModel } from "./User.ts";
 
 export const Query = sequelize.define<QueryModel>(
   "query",
@@ -59,6 +61,8 @@ export interface QueryModel extends Model {
   regexForModel?: boolean; // optional
   regexModelTxt?: string | null; // optional + nullable
   getCards: HasManyGetAssociationsMixin<CardModel>;
+
+  user: UserModel; // typed included user
 }
 
 export type CreateQueryDomainDto = {

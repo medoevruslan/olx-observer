@@ -1,14 +1,11 @@
-import { Card } from "./../models/Card";
 import https from "https";
-import { Query, QueryModel } from "../models/Query.ts";
+import { Query } from "../models/Query.ts";
 import { User } from "../models/User.ts";
 
-import { CardModel } from "../models/Card.ts";
-import { RequestOptions } from "https";
-import { HasManyGetAssociationsMixin, Model } from "sequelize";
-import { QueryDto } from "../dto/QueryDto.ts";
+import type { CardModel } from "../models/Card.ts";
+import type { RequestOptions } from "https";
 
-async function sendToBot() {
+export async function sendToBot() {
   const postOptions = {
     host: "api.telegram.org",
     path: `/bot${process.env.BOT_TOKEN}/`,
@@ -42,7 +39,7 @@ async function sendToBot() {
         if (!hasHeader) {
           hasHeader = true;
         }
-        return sendMessage(query.client.chatId, card, postOptions, hasHeader);
+        return sendMessage(query.user.chatId, card, postOptions, hasHeader);
       })
     );
 
@@ -56,7 +53,7 @@ async function sendToBot() {
 }
 
 function sendMessage(
-  chatId: number,
+  chatId: string,
   card: CardModel,
   postOptions: RequestOptions,
   hasHeader: boolean
@@ -91,5 +88,3 @@ function sendMessage(
 
   req.end(JSON.stringify(body));
 }
-
-module.exports = sendToBot;

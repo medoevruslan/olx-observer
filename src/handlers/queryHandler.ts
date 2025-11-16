@@ -9,7 +9,7 @@ import { getQueriesFromDb } from "../controller/queryController.ts";
 import type { Walker } from "../core/Walker.js";
 import type { CardsData } from "../core/types.ts";
 import { logger } from "../utils/logger.ts";
-import { CreateQueryDomainDto } from "../models/Query.ts";
+import type { CreateQueryDomainDto } from "../models/Query.ts";
 
 export async function getCards(walker: Walker) {
   const startTime = performance.now();
