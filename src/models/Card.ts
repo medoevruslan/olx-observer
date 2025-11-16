@@ -30,4 +30,5 @@ export type CardModel = {
   name: string;
   link: string;
   time: Date;
+  createdAt: Date;
 };

@@ -1,8 +1,12 @@
-const https = require("https");
-const { Query } = require("../models/query");
-const { User } = require("../models/user");
+import { Card } from "./../models/Card";
+import https from "https";
+import { Query, QueryModel } from "../models/Query.ts";
+import { User } from "../models/User.ts";
 
-import type { QueryModel } from "../models/Query.ts";
+import { CardModel } from "../models/Card.ts";
+import { RequestOptions } from "https";
+import { HasManyGetAssociationsMixin, Model } from "sequelize";
+import { QueryDto } from "../dto/QueryDto.ts";
 
 async function sendToBot() {
   const postOptions = {
@@ -12,9 +16,9 @@ async function sendToBot() {
     headers: {
       "Content-Type": "application/json",
     },
-  };
+  } as const;
 
-  const queries: QueryModel[] = await Query.findAll({
+  const queries = await Query.findAll({
     include: { model: User },
   });
 
@@ -22,23 +26,24 @@ async function sendToBot() {
   const messagePromises = [];
 
   for (const query of queries) {
-    const cards = await query.getCardsData();
-    const lastDate = cards.reduce((date, card) => Math.max(date, card.time), 0);
+    const cards = await query.getCards();
+    const lastDate = cards.reduce(
+      (acc: number, card: CardModel) => Math.max(acc, card.time.getTime()),
+      0
+    );
 
     const selectedCards = cards.filter(
-      (card) => card.time > query.lastDateCard
+      (card: CardModel) => card.time > query.lastDateCard
     );
     let hasHeader = !selectedCards.length;
 
     messagePromises.push(
-      Promise.all(
-        selectedCards.map(async (card) => {
-          if (!hasHeader) {
-            hasHeader = true;
-          }
-          return sendMessage(query.client.chatId, card, postOptions, hasHeader);
-        })
-      )
+      selectedCards.map(async (card: CardModel) => {
+        if (!hasHeader) {
+          hasHeader = true;
+        }
+        return sendMessage(query.client.chatId, card, postOptions, hasHeader);
+      })
     );
 
     if (query.lastDateCard < lastDate) {
@@ -47,15 +52,20 @@ async function sendToBot() {
   }
 
   await Promise.all(updates);
-  await Promise.all(messagePromises.flat());
+  await Promise.all(messagePromises);
 }
 
-function sendMessage(chatId, data, postOptions, hasHeader) {
-  const prettyDate = data.createdAt.toISOString?.()?.split?.("T")[0];
+function sendMessage(
+  chatId: number,
+  card: CardModel,
+  postOptions: RequestOptions,
+  hasHeader: boolean
+) {
+  const prettyDate = card.createdAt.toISOString?.()?.split?.("T")[0];
   // .toLocaleString('ru',
   // {year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric'});
 
-  const text = hasHeader ? data.link : `<b>${prettyDate}</b>\n${data.link}`;
+  const text = hasHeader ? card.link : `<b>${prettyDate}</b>\n${card.link}`;
 
   const body = {
     method: "sendMessage",

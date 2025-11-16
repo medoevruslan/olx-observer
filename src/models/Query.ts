@@ -1,10 +1,10 @@
-("use strict");
-
-import { DataTypes } from "sequelize";
+import { DataTypes, HasManyGetAssociationsMixin, Model } from "sequelize";
 import { sequelize } from "../db/db.sequelize.ts";
-import { Card } from "./Card.ts";
 
-export const Query = sequelize.define(
+import { Card } from "./Card.ts";
+import type { CardModel } from "./Card.ts";
+
+export const Query = sequelize.define<QueryModel>(
   "query",
   {
     id: {
@@ -49,13 +49,23 @@ export const Query = sequelize.define(
 Query.hasMany(Card);
 Card.belongsTo(Query, { onDelete: "CASCADE" });
 
-export type QueryModel = {
+export interface QueryModel extends Model {
   id: number;
   category: string;
   searchQuery: string;
   regex: string;
   maxPrice: number;
   lastDateCard: Date | number; // Sequelize DATE with defaultValue 0
+  regexForModel?: boolean; // optional
+  regexModelTxt?: string | null; // optional + nullable
+  getCards: HasManyGetAssociationsMixin<CardModel>;
+}
+
+export type CreateQueryDomainDto = {
+  category: string;
+  searchQuery: string;
+  regex: string;
+  maxPrice: number;
   regexForModel?: boolean; // optional
   regexModelTxt?: string | null; // optional + nullable
 };
