@@ -3,6 +3,9 @@ import "dotenv/config";
 import { processQueryToDb } from "./src/handlers/queryHandler.ts";
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   categories,
@@ -11,6 +14,13 @@ import {
   allBrands,
   yesNo,
 } from "./src/bot/buttons/botContent.ts";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const credentialsFilePath = path.join(
+  __dirname,
+  "data",
+  "userCredentials.json"
+);
 
 const brandOptionsByCategory = {
   Фото: Object.keys(fotoBrands),
@@ -27,115 +37,110 @@ async function main() {
   try {
     console.log("=== Добавление запроса через CLI ===\n");
 
-    const chatId = await askUntilValid(
+    const storedUsers = await loadStoredUsers();
+    const { chatId, userName, isExisting } = await resolveUserCredentials(
       rl,
-      "Введите chatId пользователя: ",
-      (value) => {
-        const trimmed = value.trim();
-        if (!trimmed) {
-          return "chatId не может быть пустым";
-        }
-        return true;
-      }
+      storedUsers
     );
 
-    const userName = await askUntilValid(
-      rl,
-      "Введите username пользователя (без @): ",
-      (value) => {
-        const trimmed = value.trim();
-        if (!trimmed) {
-          return "username не может быть пустым";
-        }
-        return true;
-      }
-    );
-
-    let categoryName = await selectCategory(rl);
-
-    let brand;
-    while (!brand) {
-      brand = await selectBrand(rl, categoryName);
-      if (!brand) {
-        categoryName = await selectCategory(rl);
-      }
+    if (!isExisting) {
+      await rememberUserCredential({ chatId, userName });
     }
 
-    const model = await askUntilValid(rl, "Напишите модель: ", (value) => {
-      const trimmed = value.trim();
-      if (!trimmed) {
-        return "Модель не может быть пустой";
+    let continueAdding = true;
+
+    while (continueAdding) {
+      let categoryName = await selectCategory(rl);
+
+      let brand;
+      while (!brand) {
+        brand = await selectBrand(rl, categoryName);
+        if (!brand) {
+          categoryName = await selectCategory(rl);
+        }
       }
-      return true;
-    });
 
-    const regexpAnswer = await selectFromList(
-      rl,
-      "Использовать точный поиск модели по REGEXP?",
-      yesNoChoices
-    );
+      const model = await askUntilValid(rl, "Напишите модель: ", (value) => {
+        const trimmed = value.trim();
+        if (!trimmed) {
+          return "Модель не может быть пустой";
+        }
+        return true;
+      });
 
-    let regexModelTxt = "";
-    const regexForModel = regexpAnswer === "Да";
-
-    if (regexForModel) {
-      regexModelTxt = await askUntilValid(
+      const regexpAnswer = await selectFromList(
         rl,
-        "Напишите выражение: ",
-        (value) => {
-          const trimmed = value.trim();
-          if (!trimmed) {
-            return "Регулярное выражение не может быть пустым";
+        "Использовать точный поиск модели по REGEXP?",
+        yesNoChoices
+      );
+
+      let regexModelTxt = "";
+      const regexForModel = regexpAnswer === "Да";
+
+      if (regexForModel) {
+        regexModelTxt = await askUntilValid(
+          rl,
+          "Напишите выражение: ",
+          (value) => {
+            const trimmed = value.trim();
+            if (!trimmed) {
+              return "Регулярное выражение не может быть пустым";
+            }
+            return true;
           }
-          return true;
-        }
-      );
-    }
-
-    const priceInput = await askUntilValid(rl, "<Цена?>: ", (value) => {
-      const trimmed = value.trim();
-      if (!/^\d{3,5}$/.test(trimmed)) {
-        return "Введите корректную сумму из 3-5 цифр";
+        );
       }
-      return true;
-    });
 
-    const price = Number(priceInput);
+      const priceInput = await askUntilValid(rl, "<Цена?>: ", (value) => {
+        const trimmed = value.trim();
+        if (!/^\d{3,5}$/.test(trimmed)) {
+          return "Введите корректную сумму из 3-5 цифр";
+        }
+        return true;
+      });
 
-    const summary = `ищем в категории ${categoryName} ${brand} ${model} Цена ${price}`;
-    console.log("\n" + summary);
-    if (regexModelTxt) {
-      console.log(regexModelTxt);
-    }
+      const price = Number(priceInput);
 
-    const confirm = await selectFromList(
-      rl,
-      "Подтвердите добавление",
-      yesNoChoices
-    );
+      const summary = `ищем в категории ${categoryName} ${brand} ${model} Цена ${price}`;
+      console.log("\n" + summary);
+      if (regexModelTxt) {
+        console.log(regexModelTxt);
+      }
 
-    if (confirm !== "Да") {
-      console.log("Запрос отменён пользователем");
-      return;
-    }
-
-    const isObserved = await sendQuery({
-      chatId,
-      username: userName,
-      category: categoryName,
-      brand,
-      model,
-      price,
-      modelRegex: regexModelTxt,
-      modelRegexApply: regexForModel ? "Да" : "Нет",
-    });
-
-    if (isObserved) {
-      console.log("Такой запрос уже выполняется");
-    } else {
-      console.log(
-        `\n${categoryName} ${brand} ${model} - добавлен в список запросов`
+      const confirm = await selectFromList(
+        rl,
+        "Подтвердите добавление",
+        yesNoChoices
       );
+
+      if (confirm !== "Да") {
+        console.log("Запрос отменён пользователем");
+        const action = await selectNextAction(rl);
+        continueAdding = action === NEXT_ACTIONS.addMore;
+        continue;
+      }
+
+      const isObserved = await sendQuery({
+        chatId,
+        username: userName,
+        category: categoryName,
+        brand,
+        model,
+        price,
+        modelRegex: regexModelTxt,
+        modelRegexApply: regexForModel ? "Да" : "Нет",
+      });
+
+      if (isObserved) {
+        console.log("Такой запрос уже выполняется");
+      } else {
+        console.log(
+          `\n${categoryName} ${brand} ${model} - добавлен в список запросов`
+        );
+      }
+
+      const action = await selectNextAction(rl);
+      continueAdding = action === NEXT_ACTIONS.addMore;
     }
   } catch (error) {
     console.error("Произошла ошибка при добавлении запроса", error);
@@ -206,6 +211,102 @@ async function askUntilValid(rl, question, validator) {
     }
     console.log(validation);
   }
+}
+
+async function resolveUserCredentials(rl, storedUsers) {
+  if (storedUsers.length === 0) {
+    const chatId = await askChatId(rl);
+    const userName = await askUserName(rl);
+    return { chatId, userName, isExisting: false };
+  }
+
+  const addNewOption = "Добавить нового пользователя";
+  const options = storedUsers.map(
+    (user) => `${user.chatId} (${user.userName})`
+  );
+  options.push(addNewOption);
+
+  const selection = await selectFromList(
+    rl,
+    "Выберите сохранённого пользователя или добавьте нового",
+    options
+  );
+
+  if (selection === addNewOption) {
+    const chatId = await askChatId(rl);
+    const userName = await askUserName(rl);
+    return { chatId, userName, isExisting: false };
+  }
+
+  const index = options.indexOf(selection);
+  const selected = storedUsers[index];
+  return {
+    chatId: selected.chatId,
+    userName: selected.userName,
+    isExisting: true,
+  };
+}
+
+async function askChatId(rl) {
+  return await askUntilValid(rl, "Введите chatId пользователя: ", (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return "chatId не может быть пустым";
+    }
+    return true;
+  });
+}
+
+async function askUserName(rl) {
+  return await askUntilValid(
+    rl,
+    "Введите username пользователя (без @): ",
+    (value) => {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return "username не может быть пустым";
+      }
+      return true;
+    }
+  );
+}
+
+async function loadStoredUsers() {
+  try {
+    const data = await readFile(credentialsFilePath, "utf-8");
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return [];
+    }
+    throw error;
+  }
+}
+
+async function rememberUserCredential({ chatId, userName }) {
+  const users = await loadStoredUsers();
+  const record = { chatId, userName };
+  const index = users.findIndex((user) => user.chatId === chatId);
+  if (index >= 0) {
+    users[index] = record;
+  } else {
+    users.push(record);
+  }
+  await mkdir(path.dirname(credentialsFilePath), { recursive: true });
+  await writeFile(credentialsFilePath, JSON.stringify(users, null, 2), "utf-8");
+}
+
+const NEXT_ACTIONS = {
+  addMore: "Добавить ещё",
+  exit: "Выйти",
+};
+
+async function selectNextAction(rl) {
+  return await selectFromList(rl, "Выберите действие", [
+    NEXT_ACTIONS.addMore,
+    NEXT_ACTIONS.exit,
+  ]);
 }
 
 async function sendQuery(data) {
