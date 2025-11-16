@@ -25,5 +25,6 @@ export function createRegex({
   if (regexModelTxt) {
     model = new RegExp(regexModelTxt, "i");
   }
+
   return { brand, model };
 }

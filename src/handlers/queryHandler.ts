@@ -1,8 +1,6 @@
 import { CardViewDto } from "./../dto/CardViewDto.ts";
-import "dotenv/config";
 import { sequelize } from "../db/db.sequelize.ts";
 import { filterByPrice } from "./priceFilter.ts";
-import { Scrapper } from "./scrapper.ts";
 import { User } from "../models/User.ts";
 import { Card } from "../models/Card.ts";
 import { type CardRegex, createRegex, filterByRegex } from "./regexHandler.ts";
@@ -12,23 +10,7 @@ import type { Walker } from "../core/Walker.js";
 import type { CardsData } from "../core/types.ts";
 import { logger } from "../utils/logger.ts";
 
-export async function scrapByQuery({
-  category,
-  searchQuery,
-  queryId,
-}: {
-  category: string;
-  searchQuery: string;
-  queryId: number;
-}) {
-  const scrapper = new Scrapper({ category, searchQuery, queryId });
-  let result = [];
-  result = await scrapper.scrap();
-  const flatted = result.flat();
-  return flatted;
-}
-
-export async function launch(walker: Walker) {
+export async function getCards(walker: Walker) {
   const startTime = performance.now();
   const cardsData = await getCardsData(walker);
   if (!cardsData.length) {
@@ -41,6 +23,8 @@ export async function launch(walker: Walker) {
       performance.now() - startTime
     } milliseconds`
   );
+
+  return result;
 }
 
 function resolveCardsData(cardsData: CardsData[]) {
@@ -124,28 +108,9 @@ async function getQueriesDto(): Promise<QueryDto[]> {
   return queries.map((query) => new QueryDto(query));
 }
 
-// export async function addCardsToDb() {
-//   const startTime = performance.now();
-//   const queries = await getQueriesDto();
-//   for await (let query of queries) {
-//     const { category, searchQuery, regexForModel, queryId, maxPrice } = query;
-//     const data = await scrapByQuery({ category, searchQuery, queryId });
-//     const regex = createRegex(query);
-//     const afterRegex = filterByRegex({ regex, data }, regexForModel);
-//     const benefitPrices = filterByPrice(afterRegex, maxPrice);
-//     const dateConvereted = dateToTimestamp(benefitPrices);
-//     await saveCardsToDb(dateConvereted);
-//     getLog({ data, regex, afterRegex, dateConvereted, query });
-//   }
-//   console.log(
-//     `time of scrapping (browser version) is ${
-//       performance.now() - startTime
-//     } milliseconds`
-//   );
-// }
-
-async function saveCardsToDb(cards) {
-  await Card.bulkCreate(cards, { ignoreDuplicates: true });
+export async function saveCardsToDb(cards: CardViewDto[]) {
+  const cardsPlain = cards.map((c) => c.toPlain());
+  await Card.bulkCreate(cardsPlain, { ignoreDuplicates: true });
 }
 
 function queryBuilder(query) {

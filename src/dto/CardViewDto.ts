@@ -20,6 +20,16 @@ export class CardViewDto {
     return dto;
   }
 
+  toPlain() {
+    return {
+      name: this.name,
+      price: this.price,
+      link: this.link,
+      time: this.time,
+      queryId: this.queryId,
+    };
+  }
+
   private static parsePrice(price: string | number): number {
     if (typeof price === "number") return price;
     if (!price) return 0;
