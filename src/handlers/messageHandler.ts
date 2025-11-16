@@ -1,9 +1,8 @@
-"use strict";
-
-require("dotenv").config();
 const https = require("https");
 const { Query } = require("../models/query");
 const { User } = require("../models/user");
+
+import type { QueryModel } from "../models/Query.ts";
 
 async function sendToBot() {
   const postOptions = {
@@ -15,7 +14,9 @@ async function sendToBot() {
     },
   };
 
-  const queries = await Query.findAll({ include: { model: User } });
+  const queries: QueryModel[] = await Query.findAll({
+    include: { model: User },
+  });
 
   const updates = [];
   const messagePromises = [];

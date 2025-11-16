@@ -1,3 +1,4 @@
+import { QueryDto } from "./../dto/QueryDto.ts";
 import { CardViewDto } from "./../dto/CardViewDto.ts";
 import { sequelize } from "../db/db.sequelize.ts";
 import { filterByPrice } from "./priceFilter.ts";
@@ -5,7 +6,6 @@ import { User } from "../models/User.ts";
 import { Card } from "../models/Card.ts";
 import { type CardRegex, createRegex, filterByRegex } from "./regexHandler.ts";
 import { getQueriesFromDb } from "../controller/queryController.ts";
-import { QueryDto } from "../dto/QueryDto.ts";
 import type { Walker } from "../core/Walker.js";
 import type { CardsData } from "../core/types.ts";
 import { logger } from "../utils/logger.ts";
@@ -74,7 +74,7 @@ async function getCardsData(walker: Walker): Promise<CardsData[]> {
   return result;
 }
 
-export async function processQueryToDb(query: any) {
+export async function processQueryToDb(query: SearchQuery) {
   let isObserved = false;
   let user = await User.findOne({ where: { chatId: query.chatId } });
   const assignedQuery = queryBuilder(query);
@@ -113,7 +113,7 @@ export async function saveCardsToDb(cards: CardViewDto[]) {
   await Card.bulkCreate(cardsPlain, { ignoreDuplicates: true });
 }
 
-function queryBuilder(query) {
+function queryBuilder(query: SearchQuery) {
   const {
     maxPrice,
     regexModelTxt,
@@ -154,3 +154,15 @@ function getLog({
   logger.info(`after limit price - ${afterPriceFilter.length}`);
   logger.info(afterPriceFilter);
 }
+
+export type SearchQuery = {
+  chatId: string;
+  userName: string;
+  category: string;
+  brand: string;
+  model: string;
+  maxPrice: string;
+  regex: string;
+  regexModelTxt: string;
+  regexForModel: string;
+};
