@@ -69,14 +69,14 @@ async function getCardsData(walker: Walker): Promise<CardsData[]> {
   }
   const work = queries.map(async (query) => {
     const { category, searchQuery, queryId } = query;
-    const data = await walker.execute(category, searchQuery, queryId);
+    const data = await walker.run(category, searchQuery, queryId);
     return { data: data.flat(), query };
   });
 
   return Promise.all(work);
 }
 
-export async function processQueryToDb(query: SearchQuery) {
+export async function saveQueryToDb(query: SearchQuery) {
   let isObserved = false;
   let user = await User.findOne({ where: { chatId: query.chatId } });
   const assignedQuery = queryBuilder(query);

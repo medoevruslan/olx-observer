@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-import { processQueryToDb } from "./src/handlers/queryHandler.ts";
+import { saveQueryToDb } from "./src/handlers/queryHandler.ts";
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
@@ -310,7 +310,7 @@ async function selectNextAction(rl) {
 }
 
 async function sendQuery(data) {
-  return await processQueryToDb({
+  return await saveQueryToDb({
     chatId: data.chatId.toString(),
     userName: data.username,
     category: categories[data.category],

@@ -10,9 +10,9 @@ type WalkerTaskPayload = {
 
 export class Walker {
   private readonly _rootUrl: URL;
-  private _clusterPromise:
-    | Promise<Cluster<WalkerTaskPayload, CardsResult[][]>>
-    | null = null;
+  private _clusterPromise: Promise<
+    Cluster<WalkerTaskPayload, CardsResult[][]>
+  > | null = null;
 
   constructor(rootUrl = "https://www.olx.ua/") {
     this._rootUrl = new URL(rootUrl);
@@ -98,7 +98,7 @@ export class Walker {
     return url;
   }
 
-  async execute(category = "", searchQuery = "", queryId: number) {
+  async run(category = "", searchQuery = "", queryId: number) {
     const cluster = await this.getCluster();
     const url = this.buildUrl(category, searchQuery).href;
     return cluster.execute({ url, queryId });

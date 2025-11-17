@@ -7,7 +7,7 @@ const {
   categories,
   allBrands,
 } = require("../buttons/botContent");
-const { processQueryToDb } = require("../../handlers/queryHandler");
+const { saveCardsToDb } = require("../../handlers/queryHandler");
 const { Markup, Scenes, Composer } = require("telegraf");
 const { startBtn } = require("../buttons/botContent");
 
@@ -172,7 +172,7 @@ authenticateStep.action(yesNo, async (ctx) => {
 });
 
 async function sendQuery(data) {
-  return await processQueryToDb({
+  return await saveCardsToDb({
     chatId: data.id.toString(),
     userName: data.username,
     category: categories[data.category],
