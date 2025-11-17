@@ -1,4 +1,4 @@
-import { message } from "telegraf/filters";
+import util from "util";
 // src/utils/logger.ts
 
 const Color = {
@@ -29,15 +29,36 @@ function getTimestamp() {
   return new Date().toLocaleString("uk-UA");
 }
 
+function toPrettyMessage(msg: unknown): string {
+  // Strings stay as-is
+  if (typeof msg === "string") return msg;
+
+  // Erorrs get stack trace
+  if (msg instanceof Error) {
+    return msg.stack || msg.message;
+  }
+
+  // Objects & arrays: pretty print
+  if (msg && typeof msg === "object") {
+    // First try pretty JSON
+    return util.inspect(msg, {
+      depth: null,
+      colors: true,
+      compact: false,
+    });
+  }
+
+  // Numbers, booleans, null, undefined
+  return String(msg);
+}
+
 function formatMessage(level: LogLevel, msg: unknown) {
-  const message =
-    typeof msg === "string"
-      ? msg
-      : (msg as { toString: () => string }).toString();
+  let message = toPrettyMessage(msg);
 
   const color = levelColor[level];
   const ts = getTimestamp();
   const label = level.toUpperCase().padEnd(7, " ");
+
   return `${Color.Bright}${Color.FgWhite}[${ts}]${Color.Reset} ${color}${label}${Color.Reset} ${message}`;
 }
 
