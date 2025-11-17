@@ -19,15 +19,17 @@ export async function sendToBot() {
     include: { model: User },
   });
 
-  const updates = [];
+  const updatePromises = [];
   const messagePromises = [];
 
   for (const query of queries) {
     const cards = await query.getCards();
-    const lastDate = cards.reduce(
+    const lastDateMs = cards.reduce(
       (acc: number, card: CardModel) => Math.max(acc, card.time.getTime()),
-      0
+      Date.now()
     );
+
+    const lastDate = new Date(lastDateMs);
 
     const selectedCards = cards.filter(
       (card: CardModel) => card.time > query.lastDateCard
@@ -44,11 +46,11 @@ export async function sendToBot() {
     );
 
     if (query.lastDateCard < lastDate) {
-      updates.push(query.update({ lastDateCard: lastDate }));
+      updatePromises.push(query.update({ lastDateCard: lastDate }));
     }
   }
 
-  await Promise.all(updates);
+  await Promise.all(updatePromises);
   await Promise.all(messagePromises);
 }
 
