@@ -42,17 +42,20 @@ function resolveCardsData(cardsData: CardsData[]) {
       Boolean(cardData.query.regexForModel)
     );
 
-    const afterPriceFilter = filterByPrice(afterRegex, cardData.query.maxPrice);
+    const cardsAfterPriceFilter = filterByPrice(
+      afterRegex,
+      cardData.query.maxPrice
+    );
 
     getLog({
       data: cardsView,
       regex,
       afterRegex,
-      afterPriceFilter,
+      cardsAfterPriceFilter,
       query: cardData.query,
     });
 
-    return afterPriceFilter;
+    return cardsAfterPriceFilter;
   });
 
   return cardsResolved;
@@ -139,21 +142,21 @@ function getLog({
   data,
   regex,
   afterRegex,
-  afterPriceFilter,
+  cardsAfterPriceFilter,
   query,
 }: {
   data: CardViewDto[];
   regex: CardRegex;
   afterRegex: CardViewDto[];
-  afterPriceFilter: CardViewDto[];
+  cardsAfterPriceFilter: CardViewDto[];
   query: QueryDto;
 }) {
   logger.info(new Date());
   logger.info(regex.brand, regex.model, query.searchQuery);
   logger.info(`before regex - ${data.length}`);
   logger.info(`after regex - ${afterRegex.length}`);
-  logger.info(`after limit price - ${afterPriceFilter.length}`);
-  logger.info(afterPriceFilter);
+  logger.info(`after limit price - ${cardsAfterPriceFilter.length}`);
+  logger.info(cardsAfterPriceFilter);
 }
 
 export type SearchQuery = {
