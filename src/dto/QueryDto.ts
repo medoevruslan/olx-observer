@@ -4,18 +4,18 @@ export class QueryDto {
   queryId;
   category;
   searchQuery;
-  regexForModel;
-  regex;
-  regexModelTxt;
+  isRegexModel;
+  regexBrand;
+  regexModel;
   maxPrice;
 
   constructor(model: QueryModel) {
     this.queryId = model.id;
-    this.regex = model.regex;
     this.category = model.category;
     this.maxPrice = model.maxPrice;
-    this.regexForModel = model.regexForModel;
-    this.regexModelTxt = model.regexModelTxt;
+    this.isRegexModel = model.isRegexModel;
+    this.regexBrand = model.regexBrand;
+    this.regexModel = model.regexModel;
     this.searchQuery = model.searchQuery;
   }
 }

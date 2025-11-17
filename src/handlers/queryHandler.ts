@@ -33,13 +33,13 @@ function resolveCardsData(cardsData: CardsData[]) {
     const cardsView = cardData.data.map(CardViewDto.mapToView);
 
     const regex = createRegex({
-      regex: cardData.query.regex,
-      regexModelTxt: cardData.query.regexModelTxt,
+      regexBrand: cardData.query.regexBrand,
+      regexModel: cardData.query.regexModel,
     });
 
     const afterRegex = filterByRegex(
       { regex, data: cardsView },
-      Boolean(cardData.query.regexForModel)
+      Boolean(cardData.query.regexModel)
     );
 
     const cardsAfterPriceFilter = filterByPrice(
@@ -118,21 +118,21 @@ export async function saveCardsToDb(cards: CardViewDto[]) {
 function queryBuilder(query: SearchQuery): CreateQueryDomainDto {
   const {
     maxPrice,
-    regexModelTxt,
-    regexForModel,
+    regexBrand,
+    regexModel,
     brand,
     model,
-    regex,
+    isRegexModel,
     category,
   } = query;
-  const searchFor = `q-${brand}-${model.replace(/\s/g, "-")}`;
+  const searchQuery = `q-${brand}-${model.replace(/\s/g, "-")}`;
   return {
-    searchQuery: searchFor,
-    category: category,
-    regex: `${regex}`,
-    maxPrice: maxPrice,
-    regexModelTxt: regexModelTxt,
-    regexForModel: regexForModel,
+    searchQuery,
+    category,
+    regexBrand: `${regexBrand}`,
+    maxPrice,
+    regexModel,
+    isRegexModel,
   };
 }
 
@@ -164,7 +164,7 @@ export type SearchQuery = {
   brand: string;
   model: string;
   maxPrice: number;
-  regex: string;
-  regexModelTxt: string;
-  regexForModel: boolean;
+  regexBrand: string;
+  regexModel: string;
+  isRegexModel: boolean;
 };

@@ -7,13 +7,14 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { yesNo } from "./src/bot/buttons/botContent.ts";
+
 import {
+  allBrands,
   categories,
   fotoBrands,
   laptopBrands,
-  allBrands,
-  yesNo,
-} from "./src/bot/buttons/botContent.ts";
+} from "./src/enums/index.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const credentialsFilePath = path.join(
@@ -74,11 +75,11 @@ async function main() {
         yesNoChoices
       );
 
-      let regexModelTxt = "";
-      const regexForModel = regexpAnswer === "Да";
+      let regexModel = "";
+      const isRegexModel = regexpAnswer === "Да";
 
-      if (regexForModel) {
-        regexModelTxt = await askUntilValid(
+      if (isRegexModel) {
+        regexModel = await askUntilValid(
           rl,
           "Напишите выражение: ",
           (value) => {
@@ -103,8 +104,8 @@ async function main() {
 
       const summary = `ищем в категории ${categoryName} ${brand} ${model} Цена ${price}`;
       console.log("\n" + summary);
-      if (regexModelTxt) {
-        console.log(regexModelTxt);
+      if (regexModel) {
+        console.log(regexModel);
       }
 
       const confirm = await selectFromList(
@@ -122,13 +123,13 @@ async function main() {
 
       const isObserved = await sendQuery({
         chatId,
-        username: userName,
+        userName,
         category: categoryName,
         brand,
         model,
         price,
-        modelRegex: regexModelTxt,
-        modelRegexApply: regexForModel ? "Да" : "Нет",
+        regexModel,
+        isRegexModel,
       });
 
       if (isObserved) {
@@ -147,6 +148,7 @@ async function main() {
     process.exitCode = 1;
   } finally {
     rl.close();
+    process.exit(1);
   }
 }
 
@@ -312,14 +314,14 @@ async function selectNextAction(rl) {
 async function sendQuery(data) {
   return await saveQueryToDb({
     chatId: data.chatId.toString(),
-    userName: data.username,
+    userName: data.userName,
     category: categories[data.category],
     brand: data.brand,
     model: data.model,
     maxPrice: data.price,
-    regex: allBrands[data.brand],
-    regexModelTxt: data.modelRegex || undefined,
-    regexForModel: data.modelRegexApply === "Да",
+    regexBrand: allBrands[data.brand],
+    regexModel: data.regexModel || undefined,
+    isRegexModel: data.isRegexModel,
   });
 }
 

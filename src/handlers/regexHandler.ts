@@ -4,26 +4,26 @@ export type CardRegex = { brand: RegExp; model: RegExp | null };
 
 export function filterByRegex(
   { regex, data }: { regex: CardRegex; data: CardViewDto[] },
-  regexForModel: boolean
+  isRegexModel: boolean
 ) {
   const { brand, model } = regex;
 
-  return regexForModel && model
-    ? data.filter((el) => brand.test(el.name) && model.test(el.name))
+  return isRegexModel && model
+    ? data.filter((el) => model.test(el.name))
     : data.filter((el) => brand.test(el.name));
 }
 
 export function createRegex({
-  regex,
-  regexModelTxt,
+  regexBrand,
+  regexModel,
 }: {
-  regex: string;
-  regexModelTxt: string | null | undefined;
-}) {
+  regexBrand: string;
+  regexModel: string | null | undefined;
+}): CardRegex {
   let model = null;
-  const brand = new RegExp(regex, "i");
-  if (regexModelTxt) {
-    model = new RegExp(regexModelTxt, "i");
+  const brand = new RegExp(regexBrand, "i");
+  if (regexModel) {
+    model = new RegExp(regexModel, "i");
   }
 
   return { brand, model };

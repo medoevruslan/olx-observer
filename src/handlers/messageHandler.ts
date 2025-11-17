@@ -2,8 +2,9 @@ import https from "https";
 import { Query } from "../models/Query.ts";
 import { User } from "../models/User.ts";
 
-import type { CardModel } from "../models/Card.ts";
+import { Card, type CardModel } from "../models/Card.ts";
 import type { RequestOptions } from "https";
+import { Op } from "sequelize";
 
 export async function sendToBot() {
   const postOptions = {
@@ -23,21 +24,20 @@ export async function sendToBot() {
   const messagePromises = [];
 
   for (const query of queries) {
-    const cards = await query.getCards();
-    const lastDateMs = cards.reduce(
-      (acc: number, card: CardModel) => Math.max(acc, card.time.getTime()),
-      Date.now()
-    );
+    const lastDateRaw = await Card.max<Date, CardModel>("time", {
+      where: { queryId: query.id },
+    });
 
-    const lastDate = new Date(lastDateMs);
+    const lastDate = lastDateRaw ?? new Date();
 
-    const selectedCards = cards.filter(
-      (card: CardModel) => card.time > query.lastDateCard
-    );
-    let hasHeader = !selectedCards.length;
+    const freshCards = await query.getCards({
+      where: { time: { [Op.gt]: lastDate } },
+    });
+
+    let hasHeader = !freshCards.length;
 
     messagePromises.push(
-      selectedCards.map(async (card: CardModel) => {
+      freshCards.map(async (card: CardModel) => {
         if (!hasHeader) {
           hasHeader = true;
         }

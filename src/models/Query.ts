@@ -25,7 +25,7 @@ export const Query = sequelize.define<QueryModel>(
       allowNull: false,
       unique: true,
     },
-    regex: {
+    regexBrand: {
       type: DataTypes.STRING,
       allowNull: false,
     },
@@ -37,10 +37,10 @@ export const Query = sequelize.define<QueryModel>(
       type: DataTypes.DATE,
       defaultValue: 0,
     },
-    regexForModel: {
+    isRegexModel: {
       type: DataTypes.BOOLEAN,
     },
-    regexModelTxt: {
+    regexModel: {
       type: DataTypes.STRING,
       allowNull: true,
     },
@@ -55,11 +55,11 @@ export interface QueryModel extends Model {
   id: number;
   category: string;
   searchQuery: string;
-  regex: string;
+  regexBrand: string;
   maxPrice: number;
   lastDateCard: Date | number; // Sequelize DATE with defaultValue 0
-  regexForModel?: boolean; // optional
-  regexModelTxt?: string | null; // optional + nullable
+  isRegexModel?: boolean; // optional
+  regexModel?: string | null; // optional + nullable
   getCards: HasManyGetAssociationsMixin<CardModel>;
 
   user: UserModel; // typed included user
@@ -68,8 +68,8 @@ export interface QueryModel extends Model {
 export type CreateQueryDomainDto = {
   category: string;
   searchQuery: string;
-  regex: string;
+  regexBrand: string;
   maxPrice: number;
-  regexForModel?: boolean; // optional
-  regexModelTxt?: string | null; // optional + nullable
+  isRegexModel?: boolean; // optional
+  regexModel?: string | null; // optional + nullable
 };

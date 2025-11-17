@@ -1,7 +1,7 @@
-import { DataTypes } from "sequelize";
+import { DataTypes, Model } from "sequelize";
 import { sequelize } from "../db/db.sequelize.ts";
 
-export const Card = sequelize.define("card", {
+export const Card = sequelize.define<CardModel>("card", {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -25,10 +25,10 @@ export const Card = sequelize.define("card", {
   },
 });
 
-export type CardModel = {
+export interface CardModel extends Model {
   id: number;
   name: string;
   link: string;
   time: Date;
   createdAt: Date;
-};
+}
