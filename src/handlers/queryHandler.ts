@@ -165,6 +165,6 @@ export type SearchQuery = {
   model: string;
   maxPrice: number;
   regexBrand: string;
-  regexModel: string;
+  regexModel?: string;
   isRegexModel: boolean;
 };

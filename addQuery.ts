@@ -1,20 +1,52 @@
+import { Model } from "sequelize";
 import "dotenv/config";
 
-import { saveQueryToDb } from "./src/handlers/queryHandler.ts";
-import readline from "node:readline/promises";
+import { createInterface, Interface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { saveQueryToDb } from "./src/handlers/queryHandler.ts";
+import type { SearchQuery } from "./src/handlers/queryHandler.ts";
 import { yesNo } from "./src/bot/buttons/botContent.ts";
-
 import {
   allBrands,
   categories,
   fotoBrands,
   laptopBrands,
+  macbookRegex,
 } from "./src/enums/index.ts";
+
+type ReadlineInterface = Interface;
+type CategoryName = keyof typeof categories;
+type BrandKey = keyof typeof allBrands;
+type ActualBrand = Exclude<BrandKey, "Back">;
+type YesNoChoice = (typeof yesNo)[number];
+type Validator = (value: string) => true | string;
+
+interface StoredUser {
+  chatId: string;
+  userName: string;
+}
+
+interface PreparedQuery {
+  chatId: string;
+  userName: string;
+  category: CategoryName;
+  brand: ActualBrand;
+  model: string;
+  price: number;
+  regexModel: string;
+  isRegexModel: boolean;
+}
+
+const NEXT_ACTIONS = {
+  addMore: "Добавить ещё",
+  exit: "Выйти",
+} as const;
+
+type NextAction = (typeof NEXT_ACTIONS)[keyof typeof NEXT_ACTIONS];
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const credentialsFilePath = path.join(
@@ -23,17 +55,18 @@ const credentialsFilePath = path.join(
   "userCredentials.json"
 );
 
-const brandOptionsByCategory = {
-  Фото: Object.keys(fotoBrands),
-  Ноутбуки: Object.keys(laptopBrands),
-  Планшеты: Object.keys(laptopBrands),
-  Объективы: Object.keys(fotoBrands),
+const brandOptionsByCategory: Record<CategoryName, BrandKey[]> = {
+  Фото: Object.keys(fotoBrands) as Array<keyof typeof fotoBrands>,
+  Ноутбуки: Object.keys(laptopBrands) as Array<keyof typeof laptopBrands>,
+  Планшеты: Object.keys(laptopBrands) as Array<keyof typeof laptopBrands>,
+  Объективы: Object.keys(fotoBrands) as Array<keyof typeof fotoBrands>,
 };
 
-const yesNoChoices = yesNo;
+const yesNoChoices: readonly YesNoChoice[] = yesNo;
+const categoryChoices = Object.keys(categories) as CategoryName[];
 
 async function main() {
-  const rl = readline.createInterface({ input, output });
+  const rl = createInterface({ input, output });
 
   try {
     console.log("=== Добавление запроса через CLI ===\n");
@@ -51,45 +84,41 @@ async function main() {
     let continueAdding = true;
 
     while (continueAdding) {
-      let categoryName = await selectCategory(rl);
+      const { categoryName, brand } = await pickCategoryAndBrand(rl);
 
-      let brand;
-      while (!brand) {
-        brand = await selectBrand(rl, categoryName);
-        if (!brand) {
-          categoryName = await selectCategory(rl);
-        }
-      }
+      let regexModel = macbookRegex.arm;
+      let model = "macbook";
+      let isRegexModel = true;
 
-      const model = await askUntilValid(rl, "Напишите модель: ", (value) => {
-        const trimmed = value.trim();
-        if (!trimmed) {
-          return "Модель не может быть пустой";
-        }
-        return true;
-      });
-
-      const regexpAnswer = await selectFromList(
-        rl,
-        "Использовать точный поиск модели по REGEXP?",
-        yesNoChoices
-      );
-
-      let regexModel = "";
-      const isRegexModel = regexpAnswer === "Да";
-
-      if (isRegexModel) {
-        regexModel = await askUntilValid(
-          rl,
-          "Напишите выражение: ",
-          (value) => {
-            const trimmed = value.trim();
-            if (!trimmed) {
-              return "Регулярное выражение не может быть пустым";
-            }
-            return true;
+      if (categoryName !== "Ноутбуки" && brand !== "Apple") {
+        model = await askUntilValid(rl, "Напишите модель: ", (value) => {
+          const trimmed = value.trim();
+          if (!trimmed) {
+            return "Модель не может быть пустой";
           }
+          return true;
+        });
+
+        const regexpAnswer = await selectFromList(
+          rl,
+          "Использовать точный поиск модели по REGEXP?",
+          yesNoChoices
         );
+        isRegexModel = regexpAnswer === "Да";
+
+        if (isRegexModel) {
+          regexModel = await askUntilValid(
+            rl,
+            "Напишите выражение: ",
+            (value) => {
+              const trimmed = value.trim();
+              if (!trimmed) {
+                return "Регулярное выражение не может быть пустым";
+              }
+              return true;
+            }
+          );
+        }
       }
 
       const priceInput = await askUntilValid(rl, "<Цена?>: ", (value) => {
@@ -152,19 +181,27 @@ async function main() {
   }
 }
 
-async function selectCategory(rl) {
-  return await selectFromList(
-    rl,
-    "Выберите категорию",
-    Object.keys(categories)
-  );
+async function pickCategoryAndBrand(rl: ReadlineInterface) {
+  let categoryName = await selectCategory(rl);
+
+  while (true) {
+    const brand = await selectBrand(rl, categoryName);
+    if (brand) {
+      return { categoryName, brand };
+    }
+    categoryName = await selectCategory(rl);
+  }
 }
 
-async function selectBrand(rl, categoryName) {
+async function selectCategory(rl: ReadlineInterface) {
+  return await selectFromList(rl, "Выберите категорию", categoryChoices);
+}
+
+async function selectBrand(
+  rl: ReadlineInterface,
+  categoryName: CategoryName
+): Promise<ActualBrand | null> {
   const options = brandOptionsByCategory[categoryName];
-  if (!options) {
-    throw new Error(`Неизвестная категория: ${categoryName}`);
-  }
 
   while (true) {
     const selection = await selectFromList(rl, "Выберите бренд", options);
@@ -176,7 +213,11 @@ async function selectBrand(rl, categoryName) {
   }
 }
 
-async function selectFromList(rl, title, options) {
+async function selectFromList<T extends string>(
+  rl: ReadlineInterface,
+  title: string,
+  options: readonly T[]
+): Promise<T> {
   while (true) {
     console.log(`\n${title}:`);
     options.forEach((option, index) => {
@@ -188,7 +229,7 @@ async function selectFromList(rl, title, options) {
 
     const byNumber = Number(answer);
     if (
-      !Number.isNaN(byNumber) &&
+      Number.isInteger(byNumber) &&
       byNumber >= 1 &&
       byNumber <= options.length
     ) {
@@ -204,7 +245,11 @@ async function selectFromList(rl, title, options) {
   }
 }
 
-async function askUntilValid(rl, question, validator) {
+async function askUntilValid(
+  rl: ReadlineInterface,
+  question: string,
+  validator: Validator
+) {
   while (true) {
     const answer = await rl.question(question);
     const validation = validator(answer);
@@ -215,11 +260,14 @@ async function askUntilValid(rl, question, validator) {
   }
 }
 
-async function resolveUserCredentials(rl, storedUsers) {
+async function resolveUserCredentials(
+  rl: ReadlineInterface,
+  storedUsers: StoredUser[]
+) {
   if (storedUsers.length === 0) {
     const chatId = await askChatId(rl);
     const userName = await askUserName(rl);
-    return { chatId, userName, isExisting: false };
+    return { chatId, userName, isExisting: false } as const;
   }
 
   const addNewOption = "Добавить нового пользователя";
@@ -237,7 +285,7 @@ async function resolveUserCredentials(rl, storedUsers) {
   if (selection === addNewOption) {
     const chatId = await askChatId(rl);
     const userName = await askUserName(rl);
-    return { chatId, userName, isExisting: false };
+    return { chatId, userName, isExisting: false } as const;
   }
 
   const index = options.indexOf(selection);
@@ -246,10 +294,10 @@ async function resolveUserCredentials(rl, storedUsers) {
     chatId: selected.chatId,
     userName: selected.userName,
     isExisting: true,
-  };
+  } as const;
 }
 
-async function askChatId(rl) {
+async function askChatId(rl: ReadlineInterface) {
   return await askUntilValid(rl, "Введите chatId пользователя: ", (value) => {
     const trimmed = value.trim();
     if (!trimmed) {
@@ -259,7 +307,7 @@ async function askChatId(rl) {
   });
 }
 
-async function askUserName(rl) {
+async function askUserName(rl: ReadlineInterface) {
   return await askUntilValid(
     rl,
     "Введите username пользователя (без @): ",
@@ -273,23 +321,25 @@ async function askUserName(rl) {
   );
 }
 
-async function loadStoredUsers() {
+async function loadStoredUsers(): Promise<StoredUser[]> {
   try {
     const data = await readFile(credentialsFilePath, "utf-8");
     const parsed = JSON.parse(data);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed.filter(isStoredUser);
   } catch (error) {
-    if (error.code === "ENOENT") {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return [];
     }
     throw error;
   }
 }
 
-async function rememberUserCredential({ chatId, userName }) {
+async function rememberUserCredential(record: StoredUser) {
   const users = await loadStoredUsers();
-  const record = { chatId, userName };
-  const index = users.findIndex((user) => user.chatId === chatId);
+  const index = users.findIndex((user) => user.chatId === record.chatId);
   if (index >= 0) {
     users[index] = record;
   } else {
@@ -299,30 +349,39 @@ async function rememberUserCredential({ chatId, userName }) {
   await writeFile(credentialsFilePath, JSON.stringify(users, null, 2), "utf-8");
 }
 
-const NEXT_ACTIONS = {
-  addMore: "Добавить ещё",
-  exit: "Выйти",
-};
-
-async function selectNextAction(rl) {
+async function selectNextAction(rl: ReadlineInterface): Promise<NextAction> {
   return await selectFromList(rl, "Выберите действие", [
     NEXT_ACTIONS.addMore,
     NEXT_ACTIONS.exit,
   ]);
 }
 
-async function sendQuery(data) {
-  return await saveQueryToDb({
-    chatId: data.chatId.toString(),
+async function sendQuery(data: PreparedQuery) {
+  const payload: SearchQuery = {
+    chatId: data.chatId,
     userName: data.userName,
     category: categories[data.category],
     brand: data.brand,
     model: data.model,
     maxPrice: data.price,
     regexBrand: allBrands[data.brand],
-    regexModel: data.regexModel || undefined,
+    regexModel: data.isRegexModel ? data.regexModel : undefined,
     isRegexModel: data.isRegexModel,
-  });
+  };
+
+  return await saveQueryToDb(payload);
 }
 
-main();
+function isStoredUser(value: unknown): value is StoredUser {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<StoredUser>;
+  return (
+    typeof candidate.chatId === "string" &&
+    typeof candidate.userName === "string"
+  );
+}
+
+void main();
