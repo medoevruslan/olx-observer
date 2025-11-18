@@ -71,5 +71,5 @@ export type CreateQueryDomainDto = {
   regexBrand: string;
   maxPrice: number;
   isRegexModel?: boolean; // optional
-  regexModel?: string | null; // optional + nullable
+  regexModel: string | undefined; // optional + nullable
 };
