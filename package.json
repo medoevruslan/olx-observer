@@ -6,8 +6,8 @@
     "dev": "nodemon index.js",
     "start": "node index.js",
     "db:start": "docker compose up",
-    "get-cards": "node getCards.js",
-    "post-cards": "node postCards.js",
+    "get-cards": "node getCards.ts",
+    "post-cards": "node postCards.ts",
     "add-query": "node addQuery.ts",
     "sync-db": "node syncDb.js"
   },

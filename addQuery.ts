@@ -289,7 +289,7 @@ async function resolveUserCredentials(
   }
 
   const index = options.indexOf(selection);
-  const selected = storedUsers[index];
+  const selected = storedUsers[index]!;
   return {
     chatId: selected.chatId,
     userName: selected.userName,
