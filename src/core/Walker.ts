@@ -52,10 +52,10 @@ export class Walker {
     let firstPage = true;
     const cardsArray: CardsResult[][] = [];
 
+    const forwardSelector = ".pagination-list a[data-testid=pagination-forward]";
+
     while (true) {
-      const forward = await page.$(
-        ".pagination-list a[data-testid=pagination-forward]"
-      );
+      const forward = await page.$(forwardSelector);
       if (!forward && !firstPage) break;
 
       const cards = await page.evaluate((queryId: number) => {
@@ -80,8 +80,8 @@ export class Walker {
 
       if (forward) {
         await Promise.all([
-          page.click(".pagination-list a[data-testid=pagination-forward]"),
-          page.waitForSelector(".pagination-list", { timeout: 0 }),
+          forward.click(),
+          page.waitForNavigation({ waitUntil: "load" }),
         ]);
       }
 
