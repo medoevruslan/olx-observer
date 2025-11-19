@@ -4,9 +4,9 @@ import { User } from "../models/User.ts";
 
 import { Card, type CardModel } from "../models/Card.ts";
 import type { RequestOptions } from "https";
-import { Op } from "sequelize";
+import { type HasManyGetAssociationsMixinOptions, Op } from "sequelize";
 
-export async function sendToBot() {
+export async function sendToBot(fromDate?: Date) {
   const postOptions = {
     host: "api.telegram.org",
     path: `/bot${process.env.BOT_TOKEN}/`,
@@ -20,24 +20,28 @@ export async function sendToBot() {
     include: { model: User },
   });
 
-  const updatePromises = [];
+  const updateQueryLastDatePromises = [];
   const messagePromises = [];
 
   for (const query of queries) {
-    const lastDateRaw = await Card.max<Date, CardModel>("time", {
+    const lastDateCards = await Card.max<Date, CardModel>("time", {
       where: { queryId: query.id },
     });
 
-    const lastDate = lastDateRaw ?? new Date();
+    const lastDateQuery = query.lastDateCard;
 
-    const freshCards = await query.getCards({
+    const lastDate = fromDate ?? lastDateQuery ?? new Date();
+
+    const options: HasManyGetAssociationsMixinOptions = {
       where: { time: { [Op.gt]: lastDate } },
-    });
+    };
 
-    let hasHeader = !freshCards.length;
+    const cards = await query.getCards(options);
+
+    let hasHeader = !cards.length;
 
     messagePromises.push(
-      freshCards.map(async (card: CardModel) => {
+      cards.map(async (card: CardModel) => {
         if (!hasHeader) {
           hasHeader = true;
         }
@@ -45,12 +49,14 @@ export async function sendToBot() {
       })
     );
 
-    if (query.lastDateCard < lastDate) {
-      updatePromises.push(query.update({ lastDateCard: lastDate }));
+    if (query.lastDateCard < lastDateCards) {
+      updateQueryLastDatePromises.push(
+        query.update({ lastDateCard: lastDateCards })
+      );
     }
   }
 
-  await Promise.all(updatePromises);
+  await Promise.all(updateQueryLastDatePromises);
   await Promise.all(messagePromises);
 }
 
