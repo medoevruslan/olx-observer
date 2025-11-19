@@ -6,12 +6,12 @@ export async function getQueriesFromDb(): Promise<QueryModel[]> {
   return queries as unknown as QueryModel[];
 }
 
-export async function updateQueryById(
+export async function updateQueryById<T extends keyof QueryModel>(
   id: number,
-  field: keyof QueryModel,
-  value: string
+  field: T,
+  value: QueryModel[T]
 ) {
-  return await Query.update({ [field]: value }, { where: { id: id } });
+  return await Query.update({ [field]: value }, { where: { id } });
 }
 
 export async function deleteById(id: number) {
