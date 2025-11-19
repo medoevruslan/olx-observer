@@ -69,8 +69,14 @@ async function getCardsData(walker: Walker): Promise<CardsData[]> {
     return [];
   }
   const work = queries.map(async (query) => {
-    const { category, searchQuery, queryId } = query;
-    const data = await walker.execute(category, searchQuery, queryId);
+    const { category, searchQuery, minPrice, maxPrice, queryId } = query;
+    const data = await walker.execute(
+      category,
+      searchQuery,
+      minPrice,
+      maxPrice,
+      queryId
+    );
     return { data: data.flat(), query };
   });
 

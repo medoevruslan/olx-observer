@@ -8,11 +8,13 @@ export class QueryDto {
   regexBrand;
   regexModel;
   maxPrice;
+  minPrice;
 
   constructor(model: QueryModel) {
     this.queryId = model.id;
     this.category = model.category;
     this.maxPrice = model.maxPrice;
+    this.minPrice = model.minPrice;
     this.isRegexModel = model.isRegexModel;
     this.regexBrand = model.regexBrand;
     this.regexModel = model.regexModel;

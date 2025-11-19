@@ -81,9 +81,9 @@ function printQueriesList(queries: QueryModel[]) {
   queries.forEach((query, idx) => {
     const switcher = query.isRegexModel ? "ON" : "OFF";
     console.log(
-      `[${idx + 1}] #${query.id} ${query.searchQuery} | max: ${
-        query.maxPrice
-      } | regex: ${switcher}`
+      `[${idx + 1}] #${query.id} ${query.searchQuery} | min: ${
+        query.minPrice
+      } | max: ${query.maxPrice} | regex: ${switcher}`
     );
   });
   console.log("");

@@ -8,6 +8,10 @@ import {
 import type { CardsResult } from "./types.ts";
 
 const FORWARD_SELECTOR = ".pagination-list a[data-testid=pagination-forward]";
+const FILTER_PRICE = {
+  min: "search[filter_float_price:from]",
+  max: "search[filter_float_price:to]",
+};
 
 export class Walker {
   private readonly rootUrl: URL;
@@ -35,9 +39,16 @@ export class Walker {
     return { context, page };
   }
 
-  private buildUrl(category = "", searchQuery = "") {
+  private buildUrl(
+    category = "",
+    searchQuery = "",
+    minPrice: number,
+    maxPrice: number
+  ) {
     const url = new URL(category + searchQuery, this.rootUrl);
     url.searchParams.set("currency", "UAH");
+    url.searchParams.append(FILTER_PRICE.min, minPrice.toString());
+    url.searchParams.append(FILTER_PRICE.max, maxPrice.toString());
     return url;
   }
 
@@ -62,12 +73,23 @@ export class Walker {
     }, queryId);
   }
 
-  async execute(category = "", searchQuery = "", queryId: number) {
+  async execute(
+    category = "",
+    searchQuery = "",
+    minPrice: number,
+    maxPrice: number,
+    queryId: number
+  ) {
     console.log("\x1b[31m%s\x1b[0m", "START WALKING ---->>> ");
 
     const { context, page } = await this.createPage();
     const cardsArray: CardsResult[][] = [];
-    const targetUrl = this.buildUrl(category, searchQuery).href;
+    const targetUrl = this.buildUrl(
+      category,
+      searchQuery,
+      minPrice,
+      maxPrice
+    ).href;
 
     try {
       await page.goto(targetUrl, { waitUntil: "load" });
