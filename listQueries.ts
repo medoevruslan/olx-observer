@@ -14,8 +14,7 @@ import type { QueryModel } from "./src/models/Query.ts";
 
 type ReadlineInterface = Interface;
 
-const LIST_PROMPT =
-  "Выберите номер запроса (или 'r' для обновления, 'q' для выхода): ";
+const LIST_PROMPT = "Выберите номер запроса ('q' для выхода): ";
 
 const ACTIONS = [
   { key: "1", value: "summary", label: "Показать детали запроса" },
@@ -59,7 +58,7 @@ async function showQueriesLoop(rl: ReadlineInterface) {
       process.exit(1);
     }
 
-    if (selection === "r" || selection === "") {
+    if (selection === "") {
       continue;
     }
 
@@ -158,7 +157,10 @@ function resolveAction(input: string): ActionValue | null {
 }
 
 function formatQueryDetails(query: QueryModel) {
-  const regex = createRegex(query);
+  const regex = createRegex({
+    regexBrand: query.regexBrand,
+    regexModel: query.regexModel,
+  });
   return `\n#${query.id} ${query.searchQuery}
 Regex brand: ${regex.brand}
 Regex model: ${regex.model} (${query.isRegexModel ? "ON" : "OFF"})
