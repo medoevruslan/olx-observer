@@ -36,7 +36,8 @@ interface PreparedQuery {
   category: CategoryName;
   brand: ActualBrand;
   model: string;
-  price: number;
+  minPrice: number;
+  maxPrice: number;
   regexModel: string;
   isRegexModel: boolean;
 }
@@ -86,11 +87,15 @@ async function main() {
     while (continueAdding) {
       const { categoryName, brand } = await pickCategoryAndBrand(rl);
 
-      let regexModel = macbookRegex.arm;
-      let model = "macbook";
-      let isRegexModel = true;
+      let regexModel: string | undefined;
+      let model: string;
+      let isRegexModel: boolean;
 
-      if (categoryName !== "Ноутбуки" && brand !== "Apple") {
+      if (categoryName === "Ноутбуки" && brand === "Apple") {
+        regexModel = macbookRegex.arm;
+        model = "macbook";
+        isRegexModel = true;
+      } else {
         model = await askUntilValid(rl, "Напишите модель: ", (value) => {
           const trimmed = value.trim();
           if (!trimmed) {
@@ -121,17 +126,39 @@ async function main() {
         }
       }
 
-      const priceInput = await askUntilValid(rl, "<Цена?>: ", (value) => {
-        const trimmed = value.trim();
-        if (!/^\d{3,5}$/.test(trimmed)) {
-          return "Введите корректную сумму из 3-5 цифр";
+      const minPriceInput = await askUntilValid(
+        rl,
+        "<Min Цена?>: ",
+        (value) => {
+          const trimmed = value.trim();
+          if (!trimmed) {
+            return true;
+          }
+
+          if (!/^\d{3,5}$/.test(trimmed)) {
+            return "Введите корректную сумму из 3-5 цифр";
+          }
+          return true;
         }
-        return true;
-      });
+      );
 
-      const price = Number(priceInput);
+      const minPrice = Number(minPriceInput === "" ? 0 : minPriceInput);
 
-      const summary = `ищем в категории ${categoryName} ${brand} ${model} Цена ${price}`;
+      const maxPriceInput = await askUntilValid(
+        rl,
+        "<Max Цена?>: ",
+        (value) => {
+          const trimmed = value.trim();
+          if (!/^\d{3,5}$/.test(trimmed)) {
+            return "Введите корректную сумму из 3-5 цифр";
+          }
+          return true;
+        }
+      );
+
+      const maxPrice = Number(maxPriceInput);
+
+      const summary = `ищем в категории ${categoryName} ${brand} ${model} Min Цена ${minPrice} Max Цена ${maxPrice}`;
       console.log("\n" + summary);
       if (regexModel) {
         console.log(regexModel);
@@ -156,7 +183,8 @@ async function main() {
         category: categoryName,
         brand,
         model,
-        price,
+        minPrice,
+        maxPrice,
         regexModel,
         isRegexModel,
       });
@@ -363,7 +391,8 @@ async function sendQuery(data: PreparedQuery) {
     category: categories[data.category],
     brand: data.brand,
     model: data.model,
-    maxPrice: data.price,
+    minPrice: data.minPrice,
+    maxPrice: data.maxPrice,
     regexBrand: allBrands[data.brand],
     regexModel: data.isRegexModel ? data.regexModel : undefined,
     isRegexModel: data.isRegexModel,

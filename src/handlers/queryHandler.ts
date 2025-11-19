@@ -118,6 +118,7 @@ export async function saveCardsToDb(cards: CardViewDto[]) {
 
 function queryBuilder(query: SearchQuery): CreateQueryDomainDto {
   const {
+    minPrice,
     maxPrice,
     regexBrand,
     regexModel,
@@ -131,6 +132,7 @@ function queryBuilder(query: SearchQuery): CreateQueryDomainDto {
     searchQuery,
     category,
     regexBrand: `${regexBrand}`,
+    minPrice,
     maxPrice,
     regexModel,
     isRegexModel,
@@ -164,6 +166,7 @@ export type SearchQuery = {
   category: string;
   brand: string;
   model: string;
+  minPrice: number;
   maxPrice: number;
   regexBrand: string;
   regexModel: string | undefined;

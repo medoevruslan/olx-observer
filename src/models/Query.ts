@@ -33,6 +33,11 @@ export const Query = sequelize.define<QueryModel>(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    minPrice: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false,
+    },
     lastDateCard: {
       type: DataTypes.DATE,
       defaultValue: 0,
@@ -57,6 +62,7 @@ export interface QueryModel extends Model {
   searchQuery: string;
   regexBrand: string;
   maxPrice: number;
+  minPrice: number;
   lastDateCard: Date | number; // Sequelize DATE with defaultValue 0
   isRegexModel?: boolean; // optional
   regexModel?: string | null; // optional + nullable
@@ -69,6 +75,7 @@ export type CreateQueryDomainDto = {
   category: string;
   searchQuery: string;
   regexBrand: string;
+  minPrice: number;
   maxPrice: number;
   isRegexModel?: boolean; // optional
   regexModel: string | undefined; // optional + nullable
