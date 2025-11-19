@@ -1,106 +1,106 @@
-import type { Page } from "puppeteer";
+import {
+  chromium,
+  type Browser,
+  type BrowserContext,
+  type Page,
+} from "playwright";
+
 import type { CardsResult } from "./types.ts";
 
-import { Cluster } from "puppeteer-cluster";
-
-type WalkerTaskPayload = {
-  url: string;
-  queryId: number;
-};
+const FORWARD_SELECTOR = ".pagination-list a[data-testid=pagination-forward]";
 
 export class Walker {
-  private readonly _rootUrl: URL;
-  private _clusterPromise: Promise<
-    Cluster<WalkerTaskPayload, CardsResult[][]>
-  > | null = null;
+  private readonly rootUrl: URL;
+  private browserPromise: Promise<Browser> | null = null;
 
   constructor(rootUrl = "https://www.olx.ua/") {
-    this._rootUrl = new URL(rootUrl);
+    this.rootUrl = new URL(rootUrl);
   }
 
-  private async getCluster() {
-    if (!this._clusterPromise) {
-      this._clusterPromise = (async () => {
-        const cluster = await Cluster.launch({
-          concurrency: Cluster.CONCURRENCY_PAGE,
-          maxConcurrency: 10,
-          puppeteerOptions: {
-            headless: true,
-            timeout: 0,
-            args: ["--no-sandbox", "--disable-gpu"],
-          },
-        });
-
-        await cluster.task(this.runTask.bind(this));
-        return cluster;
-      })();
+  private async getBrowser() {
+    if (!this.browserPromise) {
+      this.browserPromise = chromium.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-gpu"],
+      });
     }
 
-    return this._clusterPromise;
+    return this.browserPromise;
   }
 
-  private async runTask({
-    page,
-    data,
-  }: {
-    page: Page;
-    data: WalkerTaskPayload;
-  }) {
-    console.log("\x1b[31m%s\x1b[0m", "START WALKING ---- ");
-
-    await page.goto(data.url, { waitUntil: "load" });
-    let firstPage = true;
-    const cardsArray: CardsResult[][] = [];
-
-    const forwardSelector = ".pagination-list a[data-testid=pagination-forward]";
-
-    while (true) {
-      const forward = await page.$(forwardSelector);
-      if (!forward && !firstPage) break;
-
-      const cards = await page.evaluate((queryId: number) => {
-        return [...document.querySelectorAll("div[data-cy=l-card]")].map(
-          (el) => {
-            return {
-              name: el.querySelector("h4")?.textContent ?? "wrongSelector",
-              price:
-                el.querySelector("p[data-testid=ad-price]")?.textContent ??
-                "wrongSelector",
-              link: "olx.ua" + el.querySelector("a")?.getAttribute("href"),
-              time: el
-                .querySelector("p[data-testid=location-date]")
-                ?.textContent.split(" - ")[1],
-              queryId: queryId,
-            };
-          }
-        );
-      }, data.queryId);
-
-      cardsArray.push(cards);
-
-      if (forward) {
-        await Promise.all([
-          forward.click(),
-          page.waitForNavigation({ waitUntil: "load" }),
-        ]);
-      }
-
-      if (firstPage) firstPage = false;
-    }
-
-    console.log("\x1b[31m%s\x1b[0m", "WALKING COMPLETED ---- ");
-    return cardsArray;
+  private async createPage(): Promise<{ context: BrowserContext; page: Page }> {
+    const browser = await this.getBrowser();
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    return { context, page };
   }
 
   private buildUrl(category = "", searchQuery = "") {
-    const url = new URL(category + searchQuery, this._rootUrl);
+    const url = new URL(category + searchQuery, this.rootUrl);
     url.searchParams.set("currency", "UAH");
     return url;
   }
 
-  async run(category = "", searchQuery = "", queryId: number) {
-    const cluster = await this.getCluster();
-    const url = this.buildUrl(category, searchQuery).href;
-    return cluster.execute({ url, queryId });
+  private async extractCards(
+    page: Page,
+    queryId: number
+  ): Promise<CardsResult[]> {
+    return await page.evaluate((qid) => {
+      return [...document.querySelectorAll("div[data-cy=l-card]")].map((el) => {
+        return {
+          name: el.querySelector("h4")?.textContent ?? "wrongSelector",
+          price:
+            el.querySelector("p[data-testid=ad-price]")?.textContent ??
+            "wrongSelector",
+          link: "olx.ua" + (el.querySelector("a")?.getAttribute("href") ?? ""),
+          time: el
+            .querySelector("p[data-testid=location-date]")
+            ?.textContent.split(" - ")[1],
+          queryId: qid,
+        };
+      });
+    }, queryId);
+  }
+
+  async execute(category = "", searchQuery = "", queryId: number) {
+    console.log("\x1b[31m%s\x1b[0m", "START WALKING ---->>> ");
+
+    const { context, page } = await this.createPage();
+    const cardsArray: CardsResult[][] = [];
+    const targetUrl = this.buildUrl(category, searchQuery).href;
+
+    try {
+      await page.goto(targetUrl, { waitUntil: "load" });
+
+      while (true) {
+        const cards = await this.extractCards(page, queryId);
+        cardsArray.push(cards);
+
+        const forwardLocator = page.locator(FORWARD_SELECTOR);
+        const hasForward = (await forwardLocator.count()) > 0;
+
+        if (!hasForward) {
+          break;
+        }
+
+        await Promise.all([
+          forwardLocator.first().click(),
+          page.waitForLoadState("load"),
+        ]);
+      }
+    } finally {
+      await context.close();
+      console.log("\x1b[31m%s\x1b[0m", "WALKING COMPLETED ---- ");
+    }
+
+    return cardsArray;
+  }
+
+  async close() {
+    if (this.browserPromise) {
+      const browser = await this.browserPromise;
+      await browser.close();
+      this.browserPromise = null;
+    }
   }
 }
