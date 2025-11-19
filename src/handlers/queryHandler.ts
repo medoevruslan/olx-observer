@@ -15,14 +15,15 @@ export async function getCards(walker: Walker) {
   const startTime = performance.now();
   const cardsData = await getCardsData(walker);
   if (!cardsData.length) {
-    process.exit(1);
+    return [];
   }
 
   const result = resolveCardsData(cardsData);
   logger.info(
-    `time of scrapping (browser version) is ${
-      performance.now() - startTime
-    } milliseconds`
+    `time of scrapping (browser version) is ${(
+      (performance.now() - startTime) /
+      1000
+    ).toFixed(3)} sec`
   );
 
   return result;
@@ -69,7 +70,7 @@ async function getCardsData(walker: Walker): Promise<CardsData[]> {
   }
   const work = queries.map(async (query) => {
     const { category, searchQuery, queryId } = query;
-    const data = await walker.run(category, searchQuery, queryId);
+    const data = await walker.execute(category, searchQuery, queryId);
     return { data: data.flat(), query };
   });
 
